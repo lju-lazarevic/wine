@@ -14,7 +14,7 @@ Each week on the https://twitch.tv/neo4j_[Neo4j Twitch channel], we will build o
 I have taken the liberty of downloading and unzipping the data set, ready for import using https://neo4j.com/developer/kb/import-csv-locations/[`LOAD CSV`].
 ----
 //return the first row from the wine data
-LOAD CSV WITH HEADERS FROM `https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v2.csv?raw=true`
+LOAD CSV WITH HEADERS FROM `https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v2.csv?raw=true` AS row
 RETURN row LIMIT 1
 ----
 
