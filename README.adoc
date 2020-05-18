@@ -1,0 +1,22 @@
+== Graph adventures with wine
+
+.by Maja Petric
+[caption="Grapes  ",link=https://unsplash.com/photos/vGQ49l9I4EE] 
+image::https://images.unsplash.com/photo-1423483641154-5411ec9c0ddf?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1950&q=80[width=640, align="center"] 
+
+Based on the data from https://www.kaggle.com/zynicide/wine-reviews/data[Kaggle], this repository will hold all models, thoughts questions and code as we explore this data set on a weekly basis.
+
+Each week on the https://twitch.tv/neo4j_[Neo4j Twitch channel], we will build out on this data set, exploring together different questions we might to ask. After each session, I will update this repository with what has been covered during the session.
+
+=== Week 0: Loading the data
+
+I have taken the liberty of downloading and unzipping the data set, ready for import using https://neo4j.com/developer/kb/import-csv-locations/[`LOAD CSV`].
+----
+//return the first row from the wine data
+LOAD CSV WITH HEADERS FROM `https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v2.csv?raw=true`
+RETURN row LIMIT 1
+----
+
+=== Week 1: Modelling the data
+
+We will figure out the initial model during the https://twitch.tv/neo4j_[Twitch] session. You may find having a sheet of paper, or http://www.apcjones.com/arrows/#[Arrows] handy!
