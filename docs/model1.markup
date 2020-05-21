@@ -1,0 +1,46 @@
+<ul class="graph-diagram-markup" data-internal-scale="1" data-external-scale="1">
+  <li class="node" data-node-id="0" data-x="-299.8118095397949" data-y="72.92720794677734">
+    <span class="caption">Wine</span><dl class="properties"><dt>row</dt><dd>1</dd><dt>title</dt><dd>titleOfWine</dd><dt>description</dt><dd>something about the wine</dd><dt>price</dt><dd>13</dd></dl></li>
+  <li class="node" data-node-id="1" data-x="1191.8809204101562" data-y="30.511924743652344">
+    <span class="caption">Province</span><dl class="properties"><dt>name</dt><dd>provinceName</dd></dl></li>
+  <li class="node" data-node-id="2" data-x="-1364.3558502197266" data-y="-786.3748428821564"></li>
+  <li class="node" data-node-id="3" data-x="2028.1201667785645" data-y="1076.5627355575562"></li>
+  <li class="node" data-node-id="4" data-x="539.1776580810547" data-y="349.97147369384766">
+    <span class="caption">Region1</span><dl class="properties"><dt>name</dt><dd>regionOne</dd></dl></li>
+  <li class="node" data-node-id="5" data-x="363.6122245788574" data-y="760.5246276855469">
+    <span class="caption">Region2</span><dl class="properties"><dt>name</dt><dd>regionTwo</dd></dl></li>
+  <li class="node" data-node-id="6" data-x="1191.8809204101562" data-y="760.5246276855469">
+    <span class="caption">Country</span><dl class="properties"><dt>name</dt><dd>countryName</dd></dl></li>
+  <li class="node" data-node-id="7" data-x="-663.632568359375" data-y="560.1024188995361">
+    <span class="caption">Taster</span><dl class="properties"><dt>name</dt><dd>tasterName</dd></dl></li>
+  <li class="node" data-node-id="8" data-x="294.3463592529297" data-y="-263.1572642326355">
+    <span class="caption">Variety</span><dl class="properties"><dt>name</dt><dd>varietyName</dd></dl></li>
+  <li class="node" data-node-id="9" data-x="496.9219665527344" data-y="30.511924743652344">
+    <span class="caption">Winery</span><dl class="properties"><dt>name</dt><dd>wineryName</dd></dl></li>
+  <li class="relationship" data-from="0" data-to="4">
+    <span class="type">FROM_REGION1</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="5">
+    <span class="type">FROM_REGION2</span>
+  </li>
+  <li class="relationship" data-from="1" data-to="6">
+    <span class="type">PROVINCE_COUNTRY</span>
+  </li>
+  <li class="relationship" data-from="4" data-to="6">
+    <span class="type">REGION1_COUNTRY</span>
+  </li>
+  <li class="relationship" data-from="5" data-to="6">
+    <span class="type">REGION2_COUNTRY</span>
+  </li>
+  <li class="relationship" data-from="7" data-to="0">
+    <span class="type">RATES_WINE</span><dl class="properties"><dt>points</dt><dd>pointsFromTaster</dd></dl></li>
+  <li class="relationship" data-from="0" data-to="8">
+    <span class="type">HAS_VARIETY</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="9">
+    <span class="type">FROM_WINERY</span>
+  </li>
+  <li class="relationship" data-from="9" data-to="1">
+    <span class="type">FROM_PROVENCE</span>
+  </li>
+</ul>
