@@ -1,0 +1,289 @@
+= Graph adventures with wine
+:toc:
+:toc-title: Weeks so far
+:toclevels: 1
+
+.by Maja Petric
+[caption="Grapes  ",link=https://unsplash.com/photos/vGQ49l9I4EE] 
+image::https://images.unsplash.com/photo-1423483641154-5411ec9c0ddf?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1950&q=80[width=640, align="center"] 
+
+
+Based on the data from https://www.kaggle.com/zynicide/wine-reviews/data[Kaggle], this repository will hold all models, thoughts, questions and code as we explore this data set on a weekly basis.
+
+Each week on the https://twitch.tv/neo4j_[Neo4j Twitch channel], we will build out on this data set, exploring together different questions we might to ask. After each session, I will update this repository with what has been covered during the session.
+
+
+[#week1]
+=== Week 1 (18 May): Let's explore the data!
+_Want to participate?_
+
+* _https://www.youtube.com/watch?v=J7WHEnA-Ygg[Watch the Twitch session^]_
+* _http://www.apcjones.com/arrows/#[Link to Arrows for data modelling^]_
+* _https://www.kaggle.com/zynicide/wine-reviews/data[Link to the original data set^]_
+
+So this was an exciting start to the week! Having only just found the wine data set not that much before the start of the Twitch session, it certainly was a voyage of discovery. In this session we:
+
+* Had a look at the data set, thinking about some of the questions we might ask and insight we could discover
+* Had an initial think about what might the data model look like, and some of the modelling decisions we're going to have to make over the coming weeks
+* Decided upon pairing down the data set for now, and start thinking about importing that data
+
+*Exploring the data*
+
+First of all, let's take a sample peak at the data:
+|===
+|id |country |description |designation |points |price |province |region_1 |region_2 |taster_name |taster_twitter_handle |title |variety |winery 
+
+|0
+|Italy
+|Aromas include tropical fruit, broom <...>
+|VulkÃ  Bianco
+|87
+|
+|Sicily & Sardinia
+|Etna
+|
+|Kerin Oâ€™Keefe
+|@kerinokeefe
+|Nicosia 2013 VulkÃ  Bianco  (Etna)
+|White Blend
+|Nicosia
+
+|1
+|Portugal
+|This is ripe and fruity,  <...>	
+|Avidagos
+|87
+|15
+|Douro
+|
+|
+|Roger Voss
+|@vossroger
+|Quinta dos Avidagos 2011 Avidagos Red (Douro)
+|Portuguese Red
+|Quinta dos Avidagos
+
+|2
+|US
+|Tart and snappy, the flavors of lime  <...>
+|
+|87
+|14
+|Oregon
+|Willamette Valley
+|Willamette Valley
+|Paul Gregutt
+|@paulgwineÂ
+|Rainstorm 2013 Pinot Gris (Willamette Valley)
+|Pinot Gris
+|Rainstorm
+|===
+
+We'll probably find having a definition of the headers helpful for some of the less obvious fields!
+
+[cols="1,4",width="75%"]
+|===
+|Header | Description
+
+|<id>
+|The row id of the data set
+
+|country 
+|The country that the wine is from
+
+|description 
+|Description used to describe the tasting features of the wine
+
+|designation 
+|The vineyard within the winery where the grapes that made the wine are from. A winery may have more than one vineyard
+
+|points 
+|The number of points WineEnthusiast rated the wine on a scale of 1-100
+
+|price 
+|The cost for a bottle of the wine
+
+|province 
+|The province or state that the wine is from
+
+|region_1 
+|The wine growing area in a province or state (ie Napa Valley)
+
+|region_2 
+|Sometimes there are more specific regions specified within a wine growing area (ie Rutherford inside the Napa Valley)
+
+|taster_name 
+|Name of the taster
+
+|taster_twitter_handle 
+|Taster's twitter handle
+
+|title 
+|The title of the wine review, which often contains the vintage if you're interested in extracting that feature
+
+|variety 
+|The type of grapes used to make the wine (ie Pinot Noir)
+
+|winery 
+|The winery that made the wine
+|===
+
+A very interesting data set indeed. There are some rather cool things that we can explore, such as:
+
+* Do tasters stick to certain wines, or do they go across different grape varieties/countries?
+* How do points compare to price?
+* How do varities cross countries?
+* We can tokenise the description - can we recommend wines based on description elements?
+* ...and so many more!
+
+*Data set challenges*
+
+As we explored this data, a number of questions arose: 
+
+* Could we safely make the assumption that each line represented a unique wine? Or were we looking at a wine with multiple entries becauses different reviewers reviewed it?
+* Were there data duplications?
+* What's the year of the wine?
+* and so forth
+
+We decided to have a quick look at the data using MS Excel. We discovered some things about the data:
+
+* there is only one wine per reviewer, so we're not dealing with multiple reviews per wine
+* there are indeed duplications in the wine, we need to resolve those
+* we are going to need to do some work on the wine name - we'll need to extract the year, and also we'll want to keep the title as a wine can be across many years
+
+As an outcome of the session, I will revise the data and removed the duplicates in the dataset. Note that we could have done this within Neo4j, but I am always a fan of cleaning the data prior to a load if it is straightforward to do so!
+
+*Modelling*
+
+We then turned our thoughts to modelling. Using http://www.apcjones.com/arrows[Arrows^], we took a first pass at taking all of the data elements available, and then assigning them as either node labels, relationship types, or properties on either. The first pass looked like this:
+
+.The initial pass - getting the data down on paper!
+image::img\model1.jpg[]
+
+Whilst this is far from the finished article, this initial pass allows us to start thinking about what questions we were looking to answer, and based on that, how would we change this model. There will be other things we'll need to think about resolving too, such as:
+
+* How are we going to manage `Province` -> `Region1` -> `Region2`? Not all wines have all those details
+* How are we going to represent `Wine` (of which the title contains name wine + year), and then the `WineTitle` and it's respective `Year`?
+* We've also got `Designation` to add! Where's that going?
+
+We will visit all of these questions, and more, as we continue our wine adventure!
+
+*Importing the data*
+
+For now, we've got a cut-down model we're going to import (we'll import the rest in the next session!), which is the following
+
+.Model based on partial data - slightly less contravertial!
+image::img\model2.jpg[]
+
+Based on the approaches we use below, we are dealing with some of the duplicate values for now.
+
+*Setting indexes*
+
+As we would expect `Winery` and `Country` to be unique names, we are going to be setting some indexes to allow use to `MERGE` as we load the new data. `MERGE` behaves like a `CREATE` if the data doesn't already exist, and a `MATCH` if it does. You can read more about `MERGE` in https://neo4j.com/docs/cypher-manual/current/clauses/merge/[the documentation^].
+
+For now, we're going to assume that `Province` is also unique, and we'll set an index on a property for that too. Not the end of the world we've we're wrong - we'll just correct the data later. All part of the journey.
+
+I suggest you enable https://neo4j.com/developer/neo4j-browser/#browser-tips[multi statement query editor^] in browser as we start to do multiple queries in a row!
+
+To set the indexes, run the following in Neo4j Browser:
+
+----
+CREATE INDEX ON :Winery(name);
+CREATE INDEX ON :Province(name);
+CREATE INDEX ON :Country(name);
+----
+
+*Dealing with null values*
+
+So we discovered some null values in our data! We have some decisions to make. Do we want to skip values if they have a null, or do we want to set a default value? For the purposes of Country, Province and Winery, we are going to want to set some sort of value. Either we can later on extrapolate the information and correct it, or we are getting useful information by knowing it does not exist. So for this scenario we are going to stick with 'No Country', 'No Province' and 'No Winery' as our default options.
+
+There are a number of ways we can deal with null values, and in this instance, I'm going to use the `FOREACH - IN CASE WHEN` trick. We are going to be combining `FOREACH` to allow us to do a `MERGE`, and `CASE` to check for nulls and set a default. I'm still looking for any content talking about this trick, and I'll update this document when I find it!
+
+Loading the nodes and relationships can be memory hungry, so I am going to load the data in two passes. First of all, let's load all the nodes:
+----
+:auto //add this line if you're using Neo4j Browser
+USING PERIODIC COMMIT 1000
+LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v2.csv?raw=true' AS row
+FOREACH (i IN 
+    CASE WHEN row.country IS NOT NULL 
+         THEN [row.country] 
+         ELSE ["No Country"] 
+    END | MERGE (c:Country {name:i}))
+FOREACH (i IN 
+    CASE WHEN row.province IS NOT NULL 
+         THEN [row.province] 
+         ELSE ["No Province"] 
+    END | MERGE (p:Province {name:i}))
+FOREACH (i IN 
+    CASE WHEN row.winery IS NOT NULL 
+         THEN [row.winery] 
+         ELSE ["No Winery"] 
+    END | MERGE (w:Winery {name:i}))
+----
+
+Now we need to add the relationships between country, province and winery. I'm sure there's a prettier way to do this, which I will update when I think of it! For now, we also need to think about those null values again when we're doing the second pass:
+----
+:auto //add this line if you're using Neo4j Browser
+USING PERIODIC COMMIT 1000
+//:auto
+//USING PERIODIC COMMIT 1000
+LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v2.csv?raw=true' AS row
+WITH 
+    CASE row.country 
+        WHEN null 
+        THEN "No Country" 
+        ELSE row.country 
+    END AS country,
+    CASE row.province 
+        WHEN null 
+        THEN "No Province" 
+        ELSE row.province 
+    END AS province, 
+    CASE row.winery 
+        WHEN null 
+        THEN "No Winery" 
+        ELSE row.winery 
+    END AS winery
+MATCH (c:Country {name:country}), 
+    (p:Province {name:province}), 
+    (w:Winery {name:winery})
+MERGE (w)-[:FROM_PROVENCE]->(p)
+WITH p,c
+MERGE (p)-[:PROVINCE_COUNTRY]->(c)
+----
+
+And that's the data in! As we've been using `MERGE`, that will take care of any duplicate values, so we don't need to worry about those.
+
+*What next?*
+
+Phew! So we've got some data in. I'll leave it to you, dear reader, to think what questions you might ask of the data. I'll suggest the following to get you started, and we'll cover them in the next session:
+
+* Which countries have the most wineries?
+* Are there any wineries across different countries?
+* Which wineries are across multiple provinces?
+
+I would love to hear what interesting discoveries you have also found. Let me know during the session!
+
+See you on the 1st June!
+
+[#week2]
+=== Week 2 (1 June - 8am EDT, 1pm BST, 2pm CEST): Importing the data, asking some questions, revising our data model
+
+
+.by Tim Mossholder
+[caption="Vineyard and Hills  ",link=https://unsplash.com/photos/KDlLiCL7XPk, align="center"] 
+image::https://images.unsplash.com/photo-1464036388609-747537735eab?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1950&q=80[width=640, align="center"] 
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+
+Can't make the session? Not to worry, the recording will be on the https://youtube.com/neo4j[Neo4j YouTube channel^] soon after.
+
+This week we will review the approaches we've used for setting indexes/constraints for the data, as well as how we loaded it, and start to think about what questions we can already answer with this data subset. We will then expand our data set, import that, and ask additional questions. If time allows, we will also start to experiment with model refactoring approaches.
+
+[#week3]
+=== Week 3 (8 June - 8am EDT, 1pm BST, 2pm CEST): Session based on outcome of week 2
