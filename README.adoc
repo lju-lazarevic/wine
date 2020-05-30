@@ -267,7 +267,7 @@ I would love to hear what interesting discoveries you have also found. Let me kn
 See you on the 1st June!
 
 [#week2]
-=== Week 2 (1 June - 8am EDT, 1pm BST, 2pm CEST): Importing the data, asking some questions, revising our data model
+=== Week 2 (30 May - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Importing the data, asking some questions, revising our data model
 
 
 .by Tim Mossholder
@@ -286,4 +286,4 @@ Can't make the session? Not to worry, the recording will be on the https://youtu
 This week we will review the approaches we've used for setting indexes/constraints for the data, as well as how we loaded it, and start to think about what questions we can already answer with this data subset. We will then expand our data set, import that, and ask additional questions. If time allows, we will also start to experiment with model refactoring approaches.
 
 [#week3]
-=== Week 3 (8 June - 8am EDT, 1pm BST, 2pm CEST): Session based on outcome of week 2
+=== Week 3 (6 June - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Session based on outcome of week 2
