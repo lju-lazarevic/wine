@@ -203,7 +203,7 @@ Loading the nodes and relationships can be memory hungry, so I am going to load 
 ----
 :auto //add this line if you're using Neo4j Browser
 USING PERIODIC COMMIT 1000
-LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v2.csv?raw=true' AS row
+LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v3.csv?raw=true' AS row
 FOREACH (i IN 
     CASE WHEN row.country IS NOT NULL 
          THEN [row.country] 
@@ -227,7 +227,7 @@ Now we need to add the relationships between country, province and winery. I'm s
 USING PERIODIC COMMIT 1000
 //:auto
 //USING PERIODIC COMMIT 1000
-LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v2.csv?raw=true' AS row
+LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v3.csv?raw=true' AS row
 WITH 
     CASE row.country 
         WHEN null 
@@ -280,10 +280,161 @@ _Want to participate?_
 
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 to load the data_
 
 Can't make the session? Not to worry, the recording will be on the https://youtube.com/neo4j[Neo4j YouTube channel^] soon after.
 
-This week we will review the approaches we've used for setting indexes/constraints for the data, as well as how we loaded it, and start to think about what questions we can already answer with this data subset. We will then expand our data set, import that, and ask additional questions. If time allows, we will also start to experiment with model refactoring approaches.
+This week was an interesting installment! We spent the first part of the session walking through the rationale behind the load queries for the data. As you may recall we had some duplicates to deal with, so we made some decisions, such as assuming that all wineries and provinces has unique names, and we imported the data.
+
+I also posed some questions to you all to ask of this data, as a reminder, the questions were:
+
+* Which countries have the most wineries?
+* Are there any wineries across different countries?
+* Which wineries are across multiple provinces?
+
+As well as using Cypher to answer the questions, we also had a brief look at the data using Neo4j Bloom. For those of you who have not come across Bloom before, it's a near natural language visualisation tool for graphs. You can read more about it https://medium.com/neo4j/bloom-ing-marvellous-a2be0c3702bb[here^].
+
+So, onto those queries!
+
+.Which countries have the most wineries?
+----
+MATCH path=(w:Winery)-[:FROM_PROVENCE]->(p:Province)-[:PROVINCE_COUNTRY]->(c:Country)
+RETURN c.name AS Country, count(DISTINCT w) AS Total 
+ORDER BY Total DESC
+----
+
+.Which wineries are across multiple provinces?
+----
+MATCH (w:Winery)-[:FROM_PROVENCE]->(p:Province)
+WITH w, COLLECT(p.name) AS Provinces, count(p) AS Total
+RETURN w.name AS Winery, Provinces, Total 
+ORDER BY Total DESC
+----
+
+So, having had a look at that data, we then decided to add more data. Again, we're going to leave the sticky matter of how to deal with regions for now. We decided we'd add `Taster`, `Designation` and `Variety`, as well as the `Wine` itself. If you recall, `Wine` name also contained the year - and we'll probably want to extract that. But for now, we'll import it as is.
+
+.The expanded data model that now includes Designation, Taster, Wine and Variety
+image::img\model3.jpg[]
+
+First of all, we need to set some indexes. We do this because this will allow us to search for data faster by using an index look up on properties of interest rather than doing a full database scan. It's also super helpful if we're using `MERGE`, again for the same reason.
+
+.Set the required indexes
+----
+//indexes for additional data
+CREATE INDEX ON :Wine(id);
+CREATE INDEX ON :Taster(name);
+CREATE INDEX ON :Variety(name);
+CREATE INDEX ON :Designation(name);
+----
+
+And now we can load the data. As before, we will do two passes of this, one to create the nodes, and then the second pass to create the relationships. You will notice in the second pass we also search for the `Winery` node - this is so that we can connect it up to `Wine`!
+
+.Loading the `Designation`, `Taster`, `Variety` and `Wine` nodes. Note that we use `CREATE` for `Wine` - that's because we expect all instances to be unique, so we can just create them
+----
+:auto //add this line if you're using Neo4j Browser
+USING PERIODIC COMMIT 1000
+LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v3.csv?raw=true' AS row
+FOREACH (i IN
+    CASE WHEN row.designation IS NOT NULL
+         THEN [row.designation]
+         ELSE ["No Designation"]
+    END | MERGE (d:Designation {name:i}))
+FOREACH (i IN
+    CASE WHEN row.taster_name IS NOT NULL
+         THEN [row.taster_name]
+         ELSE ["No Taster"]
+    END | MERGE (t:Taster {name:i}))
+FOREACH (i IN
+    CASE WHEN row.variety IS NOT NULL
+         THEN [row.variety]
+         ELSE ["No Variety"]
+    END | MERGE (v:Variety {name:i}))
+CREATE (w:Wine {id:row.id, title:row.title})
+----
+
+.And following up with creating the relationships. You will notice all of the relationship types are `CREATE`, this is because they all join onto `Wine`, which as we said previously, we assume to be unique for all entries.
+----
+:auto //add this line if you're using Neo4j Browser
+USING PERIODIC COMMIT 1000
+LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v3.csv?raw=true' AS row
+WITH
+    CASE row.designation
+        WHEN null
+        THEN "No Designation"
+        ELSE row.designation
+    END AS designation,
+    CASE row.taster_name 
+        WHEN null
+        THEN "No Taster"
+        ELSE row.taster_name 
+    END AS taster,
+    CASE row.variety
+        WHEN null
+        THEN "No Variety"
+        ELSE row.variety
+    END AS variety,
+    CASE row.winery
+        WHEN null
+        THEN "No Winery"
+        ELSE row.winery
+    END AS winery,
+    row.id as id
+MATCH (d:Designation {name:designation}),
+    (t:Taster {name:taster}),
+    (v:Variety {name:variety}),
+    (w:Wine {id:id}),
+    (win:Winery {name:winery})
+CREATE (w)-[:FROM_WINERY]->(win)
+CREATE (w)-[:HAS_VARIETY]->(v)
+CREATE (t)-[:RATES_WINE]->(w)
+CREATE (w)-[:HAS_DESIGNATION]->(d)
+----
+
+Excellent! So we've got that data in, and now we can think about some different questions we can ask. For example:
+
+* Who is the most prolific wine taster?
+* How many wine varieties contain the word 'red'?
+
+.Querying for the most prolific wine taster
+----
+//Most prolific taster
+MATCH (t:Taster)
+WHERE t.name <> "No Taster"
+WITH t
+MATCH (t)-[:RATES_WINE]->(w:Wine)-[:HAS_VARIETY]->(v:Variety)
+WITH t, count(w) AS total, COLLECT(DISTINCT v.name) AS varieties
+RETURN t.name AS taster, varieties, total 
+ORDER BY total DESC
+----
+
+.Finding all the varieties that contain the word 'red' in them
+----
+MATCH (v:Variety)
+WHERE tolower(v.name) CONTAINS 'red'
+RETURN v.name 
+ORDER BY v.name
+----
+
+Have a go at some other questions yourself! You can always use Bloom to help think about what you might want to investigate too. If you can think of a question that you're not sure how to write a query for, we can cover it in the session.
 
 [#week3]
-=== Week 3 (6 June - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Session based on outcome of week 2
+=== Week 3 (6 June - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Let's tackle those wine years!
+
+.by Maksym Kaharlytskyi
+[caption="Four glasses of wine  ",link=https://unsplash.com/photos/3uJt73tr4hI, align="center"] 
+image::https://images.unsplash.com/photo-1568213816046-0ee1c42bd559?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1952&q=80[width=640, align="center"] 
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 & 2 to load the data_
+
+So for this week, I am thinking let's think about pulling out the year from the Wine name - and yes, we'll do a bit more graph refactoring - however, we are going to make physical changes to the data, rather than do this by import!
+
+Also, we can start to have a think about what are we going to do with all those wine descriptions too.
+
+[#week4]
+=== Week 4 (13 June - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Based on the outcome of week 3
