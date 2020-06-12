@@ -432,9 +432,150 @@ _Want to participate?_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 & 2 to load the data_
 
-So for this week, I am thinking let's think about pulling out the year from the Wine name - and yes, we'll do a bit more graph refactoring - however, we are going to make physical changes to the data, rather than do this by import!
+Well... this was a slightly painful week! We all have bad days and I guess it was my turn :). Nevertheless, there is some very good learning to be had, and hopefully you'll be equiped that little bit better to spot issues.
 
-Also, we can start to have a think about what are we going to do with all those wine descriptions too.
+Let's start off with a top tip for this week...
+
+[TIP]
+Do you have a smallish dataset? Is it taking a very long time to `MERGE` your data? Check if you have correctly set your indexes! More on that shortly <blush>.
+
+So, what we were aiming to do this week:
+
+* Refactor the model yet again to think how we'll show years and titles. The big difference here being we're not importing data, we're working with data that we already have in the database
+* Pull the years out of the wine titles and create separate `Year` and `WineTitle` nodes
+* Ask some questions!
+
+So, let's get going!
+
+*Yet another model revision*
+
+We started of with trying to decide how would we go about modelling the relationship between:
+
+* Wine Group (the term we decided to refer to a wine's title but without the year)
+* Year
+* Wine (which has a title that contains wine group and year)
+
+For the puroses of just getting something to work with, we ended up with a sketch of the following to walk through the rationale:
+
+.A worked example of how the physical data might connect
+image::img\model4.jpg[]
+
+We don't expect there to be many relationships coming off of `WineGroup` - there'll probably be a few years and that's it. The more tricky one may well be `WineGroup` to `Year` - `Year` could quite possibly become a dense node. Not all dense nodes are bad - if you're not traversing between multiple dense nodes it might be fine. For now, let's leave it as it is, and we can always refactor the model to deal with it if necessary later.
+
+So, based on this, let's have a look at what our data model now stands:
+
+.An update...
+image::img\model5.jpg[]
+
+It didn't feel quite right, so I decided that `Year` should come off `Wine` and not `WineGroup`:
+
+.The latest iteration of the wine data model
+image::img\model6.jpg[]
+
+I'm still not crazy about this model, but that's completely fine. That's one of the things that I love about graph databases - we don't have to get the data model perfect, we just get something that's in the right direction, and we just iterate and refine it as we go along and understand our data better. Undoubtedly we'll be back soon enough with some changes.
+
+*I'm coming for you, wine year and group!*
+
+Ok, now with that out of the way, we are going to extract that year, and a title without the year for our two new nodes, `Year` and `WineGroup`. We could have dealt with this before importing the data, but I thought it would be a good opportunity to use APOC to help us make changes with what we already have, in the database. 
+
+Due to how the wine title is structured, we are going to be using some fancy regex patterns to get the job done. We'll also be using the text helper function apoc.text.replace(). Let's look at some examples.
+
+_Getting the yearless wine group_
+
+This is the easy bit - we want to find 4 digits next to each other, and then replace them with nothing. Just pulling a few to look at as an example, if we run the following:
+
+----
+MATCH (w:Wine) 
+RETURN w.title, apoc.text.replace(w.title, '([0-9][0-9][0-9][0-9])', '') AS test LIMIT 5
+----
+
+We get:
+
+image::img\img1.jpg[width="600"]
+
+Brilliant! Turns out getting the year is a teeny bit more involved with it comes to regex... Undoubtedly there'll be a better way to do this, but I'm glad I've got something at all:
+
+----
+MATCH (w:Wine) 
+RETURN w.title, apoc.text.replace(w.title, '[^0-9]|[^0-9][0-9]{1,3}[^0-9]|^[0-9]{1,3}[^0-9]|[^0-9][0-9]{1,3}$', '') AS test LIMIT 5
+----
+
+Woah! Yes... ok, taking each option (separated with `|`), we have:
+
+* Is not a digit
+* Is not a digit, followed by a digit that repeats up to 3 times followed by not a digit
+* Starts with a number that repeats up to 3 times followed by not a digit
+* Not a digit, followed with a number that repeats up to 3 times at the end
+
+I would love to hear input on how to make that pattern more elegant! Let's have a look at a sample:
+
+image::img\img2.jpg[width="600"]
+
+Success! We can extract both the year and wine groups - now let's convert them into nodes, and hook everything up according to our model. To do that, let's use another APOC tool to help, the procedue apoc.periodic.iterate().
+
+First of all, let's set those all important indexes:
+
+----
+CREATE INDEX ON :WineGroup(title);
+CREATE INDEX ON :Year(value);
+----
+
+So - some of you who were watching me last week may have noticed I was just not getting any joy when trying to create the `WineGroup` node... in the end it took over an hour(!!!) to finish - I stopped the video when it was taking minutes and just left it. I only just spotted the shocking mistake I had made when I came to do the write up... I had created an index for `:WineGroup(title)`, but I was trying to create a node of `:WineTitle(title)`. Ouch. Rerunning the whole thing again (with the indexes/right label names), reader I can assure you it only took a mere 4s. So, as for our impromptu tip of the day - if it's a small data set and it's taking a long time, check your indexes.
+
+That aside, let's get to the business of the day, updating the data. As before, we'll go in 3 passes, the two different node labels, and then join them with the relationships:
+
+----
+//Create the WineGroup nodes
+CALL apoc.periodic.iterate(
+  "MATCH (w:Wine) RETURN apoc.text.replace(w.title, '([0-9][0-9][0-9][0-9])', '') AS wineTitle",
+  "MERGE (g:WineGroup{title:wineTitle})",
+  {batchSize:100, parallel:false})
+----
+
+----
+//Create the Year nodes
+CALL apoc.periodic.iterate(
+  "MATCH (w:Wine) RETURN apoc.text.replace(w.title, '[^0-9]|[^0-9][0-9]{1,3}[^0-9]|^[0-9]{1,3}[^0-9]|[^0-9][0-9]{1,3}$', '') AS year",
+  "MERGE (y:Year{value:year})",
+  {batchSize:100, parallel:false})
+----
+
+----
+//join it all together
+MATCH (w:Wine) 
+WITH apoc.text.replace(w.title, '([0-9][0-9][0-9][0-9])', '') AS wineTitle, 
+     apoc.text.replace(w.title, '[^0-9]|[^0-9][0-9]{1,3}[^0-9]|^[0-9]{1,3}[^0-9]|[^0-9][0-9]{1,3}$', '') AS year, w
+MATCH (y:Year {value:year}), (wg:WineGroup{title:wineTitle})
+CREATE (w)-[:FROM_YEAR]->(y), 
+       (w)-[:IN_WINE_GROUP]->(wg)
+----
+
+But uh oh.... we have a problem... Looking at the years we have, we get the following:
+
+image::img\img3.jpg[width="600"]
+
+and
+
+image::img\img4.jpg[width="600"]
+
+Not to worry, let's get that fixed next :).
 
 [#week4]
-=== Week 4 (13 June - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Based on the outcome of week 3
+=== Week 4 (13 June - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Oh no! We have a year problem!
+
+.by Elisha Terada
+[caption="Pile of brown corks  ",link=https://unsplash.com/photos/MDJvfXJGnRM, align="center"] 
+image::https://images.unsplash.com/photo-1491924778227-f225b115dd5f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1950&q=80[width=640, align="center"] 
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2 to load the data_
+
+So it turns out the regex didn't quite work as expected, back to the drawing board we go...
+
+[#week5]
+=== Week 5 (28 June - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Based on the outcome of week 4
