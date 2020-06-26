@@ -278,6 +278,8 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
+* _https://www.youtube.com/watch?v=__iDEan55Xw[Watch the Twitch session part 1^]_
+*_https://www.youtube.com/watch?v=KmCRpCp25qM[Watch the Twitch session part 2 - conneciton dropped^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 to load the data_
@@ -428,6 +430,7 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
+* _https://www.youtube.com/watch?v=N5Vb_w8WSD0[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 & 2 to load the data_
@@ -571,11 +574,76 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
+* _https://www.youtube.com/watch?v=MI2jXuAGt5Y[Watch the Twitch session^]_
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 3 to load the data_
+
+A quick entry for this week, and I'll expand accordingly later.
+
+So it turns out the regex didn't quite work as expected from last week. So in this week's session we did a bit of digging.
+
+Regex didn't work so well - we were also catching 2 digits, we fixed the regex for that with the following:
+
+----
+MATCH (w:Wine) WHERE w.title contains("1000")
+RETURN w.title, 
+     apoc.text.replace(w.title, '( [2][0-1][0-1][0-9])', '') AS test1,
+     apoc.text.replace(w.title, '( [1][9][7-9][0-9])', '') AS test2 
+LIMIT 5
+----
+
+It's not pretty, but it does the job, and I'll take it!
+
+However, that aside we still have some other challenges. For example:
+
+* Some wines have 'weird' years - branding years
+* Some wines have 2 years, the branding year and the actual wine year
+* Some wines have no years!
+
+We interrogated the data, and decided one of the sensible ways to tackle this would be the following:
+
+* Assume year range of 1970-2017 - any wine with a year that doesn't fall within this range we will assume is a branding year
+* Wines with a branding year or no year, we'll tag with 'No Year', like we have done for other labels
+* If a wine has two years, go for the one that sits in the above range
+* If a wine has two years of which both sit in the above range, go for the highest
+
+Whilst it may involve some creative querying to enforce the above rules, the fact that we have them will be a huge help, irrespective of what approach we use to resolve this particular challenge.
+
+Before we continue, we should clear up the wine years and groups. We can do that with the following code snippets:
+
+----
+//Remove the year nodes
+MATCH (y:Year)
+DETACH
+DELETE y;
+----
+
+----
+//Remove the wine group nodes
+MATCH (wg:WineGroup)
+DETACH
+DELETE wg;
+----
+
+One more attempt... and then we'll move onto the next part of the journey
+
+[#week5]
+=== Week 5 (28 June - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Wine years and titles, final attempt!
+
+.by Hermes Rivera
+[caption="Wine shelf  ",link=https://unsplash.com/photos/aK6WGqxyHFw[width=640, align="center"] 
+image::https://images.unsplash.com/photo-1562601579-599dec564e06?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80[width=640, align="center"] 
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2 to load the data_
 
-So it turns out the regex didn't quite work as expected, back to the drawing board we go...
+Last attempt of trying to sort out the year and wine groups before I turn to alternative means so that we can move on!
 
-[#week5]
-=== Week 5 (28 June - 9am PDT, 12pm EDT, 5pm BST, 6pm CEST): Based on the outcome of week 4
+[#week6]
+=== Week 6 (3 July - 8am PDT, 11pm EDT, 4pm BST, 5pm CEST): Based on the outcome of week 5
