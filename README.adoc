@@ -203,7 +203,7 @@ Loading the nodes and relationships can be memory hungry, so I am going to load 
 ----
 :auto //add this line if you're using Neo4j Browser
 USING PERIODIC COMMIT 1000
-LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v3.csv?raw=true' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/lju-lazarevic/wine/master/data/winemag-data-130k-v3.csv' AS row
 FOREACH (i IN 
     CASE WHEN row.country IS NOT NULL 
          THEN [row.country] 
@@ -227,7 +227,7 @@ Now we need to add the relationships between country, province and winery. I'm s
 USING PERIODIC COMMIT 1000
 //:auto
 //USING PERIODIC COMMIT 1000
-LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v3.csv?raw=true' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/lju-lazarevic/wine/master/data/winemag-data-130k-v3.csv' AS row
 WITH 
     CASE row.country 
         WHEN null 
@@ -335,7 +335,7 @@ And now we can load the data. As before, we will do two passes of this, one to c
 ----
 :auto //add this line if you're using Neo4j Browser
 USING PERIODIC COMMIT 1000
-LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v3.csv?raw=true' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/lju-lazarevic/wine/master/data/winemag-data-130k-v3.csv' AS row
 FOREACH (i IN
     CASE WHEN row.designation IS NOT NULL
          THEN [row.designation]
@@ -358,7 +358,7 @@ CREATE (w:Wine {id:row.id, title:row.title})
 ----
 :auto //add this line if you're using Neo4j Browser
 USING PERIODIC COMMIT 1000
-LOAD CSV WITH HEADERS FROM 'https://github.com/lju-lazarevic/importdata/blob/master/winemag-data-130k-v3.csv?raw=true' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/lju-lazarevic/wine/master/data/winemag-data-130k-v3.csv' AS row
 WITH
     CASE row.designation
         WHEN null
