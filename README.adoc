@@ -581,27 +581,18 @@ _Want to participate?_
 
 A quick entry for this week, and I'll expand accordingly later.
 
-So it turns out the regex didn't quite work as expected from last week. So in this week's session we did a bit of digging.
+So it turns out the regex didn't quite work as expected from last week. So in this week's session we did a bit of digging. We discovered that we returning all digits for year, and other peculiarities. 
 
-Regex didn't work so well - we were also catching 2 digits, we fixed the regex for that with the following:
+For example, we were seeing things like this:
+image:: img/img5.jpg[width="600"]
 
-----
-MATCH (w:Wine) WHERE w.title contains("1000")
-RETURN w.title, 
-     apoc.text.replace(w.title, '( [2][0-1][0-1][0-9])', '') AS test1,
-     apoc.text.replace(w.title, '( [1][9][7-9][0-9])', '') AS test2 
-LIMIT 5
-----
-
-It's not pretty, but it does the job, and I'll take it!
-
-However, that aside we still have some other challenges. For example:
+We did some further investigation, and spotted some other fun things going on. For example:
 
 * Some wines have 'weird' years - branding years
 * Some wines have 2 years, the branding year and the actual wine year
 * Some wines have no years!
 
-We interrogated the data, and decided one of the sensible ways to tackle this would be the following:
+After we interrogated the data, and decided one of the sensible ways to tackle this would be the following:
 
 * Assume year range of 1970-2017 - any wine with a year that doesn't fall within this range we will assume is a branding year
 * Wines with a branding year or no year, we'll tag with 'No Year', like we have done for other labels
@@ -609,6 +600,40 @@ We interrogated the data, and decided one of the sensible ways to tackle this wo
 * If a wine has two years of which both sit in the above range, go for the highest
 
 Whilst it may involve some creative querying to enforce the above rules, the fact that we have them will be a huge help, irrespective of what approach we use to resolve this particular challenge.
+
+So, with the above in mind, let's try some things out.
+
+*Finding wines with two years in the same range
+
+So, how many wines do we actually have to deal with that have multiple years? Let's find out:
+
+----
+MATCH (w:Wine)
+WITH w, apoc.text.replace(w.title, '( [2][0-1][0-1][0-9])', '') AS test1, apoc.text.replace(w.title, '( [1][9][7-9][0-9])', '') AS test2 
+    WHERE size(test1)=size(test2) AND size(w.title)>size(test1)
+RETURN w.title, test1, test2
+//LIMIT 5
+----
+
+Only 14?! Ok - I'm tempted to leave them for now and deal with them later.
+
+So, let's turn our attention to the rest of the years. We'll exclude those 14, and process the rest
+
+*Get the Wine Group*
+
+Using our range defined above, I put together this (rather cumbersome) query that will try and pick out the year based on 
+
+----
+//display wines without years
+MATCH (w:Wine) 
+WITH w, apoc.text.replace(w.title, '( [2][0-1][0-1][0-9])|( [1][9][7-9][0-9])', '') AS wineGroup 
+    WHERE size(wineGroup)=size(w.title)-5 OR size(wineGroup)=size(w.title)
+RETURN w.title, wineGroup
+----
+
+It's not pretty, but it does the job, and I'll take it!
+
+*Clean up on aisle 7*
 
 Before we continue, we should clear up the wine years and groups. We can do that with the following code snippets:
 
