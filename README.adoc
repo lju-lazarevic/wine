@@ -597,7 +597,7 @@ After we interrogated the data, and decided one of the sensible ways to tackle t
 * Assume year range of 1970-2017 - any wine with a year that doesn't fall within this range we will assume is a branding year
 * Wines with a branding year or no year, we'll tag with 'No Year', like we have done for other labels
 * If a wine has two years, go for the one that sits in the above range
-* If a wine has two years of which both sit in the above range, go for the highest
+* If a wine has two years of which both sit in the above range, go for the first one that appears
 
 Whilst it may involve some creative querying to enforce the above rules, the fact that we have them will be a huge help, irrespective of what approach we use to resolve this particular challenge.
 
@@ -669,6 +669,62 @@ _Want to participate?_
 * _Complete the steps for Week 1 - 2 to load the data_
 
 Last attempt of trying to sort out the year and wine groups before I turn to alternative means so that we can move on!
+
+Upon having a dig around in the APOC documentation, I spot something interesting... `apoc.text.regexGroups()` - could this be what we are looking for? We can reuse the regex pattern we have for finding our in range years, without the convoluted logic for `replace()`. Obviously, we now have to give that a spin!
+
+----
+MATCH (w:Wine) 
+WITH w, apoc.text.regexGroups(w.title, '([2][0-1][0-1][0-9])|([1][9][7-9][0-9])') AS years
+WITH w, years, size(years) AS s 
+    WHERE s>0 //get rid of no year wines
+RETURN w.title, years[0][0], size(years) AS s ORDER BY s LIMIT 10
+----
+
+Which gives us:
+
+image::img/img6.jpg[width="600"]
+
+Also, we can now deal with the awkward 14 using `replace()`, now that we know what year to get rid of. Success!
+
+Right, given we can successfully extract the years, it makes the most sense to do the years first, and then use those for determining the `WineGroup` nodes. 
+
+Firstly, process all the `Wine` nodes that have a year:
+
+* Create the `Year` node
+* Connect the `Year` node to the `Wine` node
+* Then use both to create the `WineGroup` node and connect up
+
+----
+//Create the Year nodes
+CALL apoc.periodic.iterate(
+  "MATCH (w:Wine) WITH w, apoc.text.regexGroups(w.title, '([2][0-1][0-1][0-9])|([1][9][7-9][0-9])') AS years WITH w, years, size(years) AS s WHERE s>0 RETURN years[0][0] as year",
+  "MERGE (y:Year{value:year})",
+  {batchSize:100, parallel:false});
+----
+
+----
+//Connect Year node to Wine node
+MATCH (w:Wine) 
+WITH w, apoc.text.regexGroups(w.title, '([2][0-1][0-1][0-9])|([1][9][7-9][0-9])') AS years 
+WITH w, years, size(years) AS s WHERE s>0
+MATCH (y:Year {value:years[0][0]})
+CREATE (w)-[:FROM_YEAR]->(y);
+----
+
+----
+//Create the WineGroup nodes
+MATCH (w:Wine)-[:FROM_YEAR]->(y:Year)
+MERGE (wg:WineGroup {title:apoc.text.replace(w.title, y.value,'')})
+WITH wg, w
+CREATE (w)-[:IN_WINE_GROUP]->(wg);
+----
+
+*What about wines with no year?*
+
+Interestingly, given how we deduplicated our data (assume all wine are unique, we do have the interesting question of whether it's worth creating a `WineGroup` node for those that don't have a valid year. I think we'll leave them for now, and we can revisit all of this if it turns out to be a wrong assumption!
+
+*Finally, let's ask some questions!*
+
 
 [#week6]
 === Week 6 (3 July - 8am PDT, 11pm EDT, 4pm BST, 5pm CEST): Based on the outcome of week 5
