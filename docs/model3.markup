@@ -1,0 +1,19 @@
+<ul class="graph-diagram-markup" data-internal-scale="1" data-external-scale="1">
+  <li class="node" data-node-id="0" data-x="0" data-y="0">
+    <span class="caption">Winery</span>
+  </li>
+  <li class="node" data-node-id="1" data-x="382" data-y="-189.5">
+    <span class="caption">Wine</span><dl class="properties"><dt>title</dt><dd>wine 1</dd></dl></li>
+  <li class="node" data-node-id="2" data-x="405.54925537109375" data-y="64.158447265625">
+    <span class="caption">Wine</span><dl class="properties"><dt>title</dt><dd>wine 2</dd></dl></li>
+  <li class="node" data-node-id="3" data-x="382" data-y="345.8292236328125">
+    <span class="caption">Wine</span><dl class="properties"><dt>title</dt><dd>wine 3</dd></dl></li>
+  <li class="node" data-node-id="4" data-x="964.8239135742188" data-y="87.158447265625">
+    <span class="caption">Year</span><dl class="properties"><dt>value</dt><dd>2013</dd></dl></li>
+  <li class="relationship" data-from="0" data-to="1"></li>
+  <li class="relationship" data-from="0" data-to="2"></li>
+  <li class="relationship" data-from="0" data-to="3"></li>
+  <li class="relationship" data-from="1" data-to="4"></li>
+  <li class="relationship" data-from="2" data-to="4"></li>
+  <li class="relationship" data-from="3" data-to="4"></li>
+</ul>

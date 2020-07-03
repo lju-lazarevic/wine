@@ -725,6 +725,107 @@ Interestingly, given how we deduplicated our data (assume all wine are unique, w
 
 *Finally, let's ask some questions!*
 
+I'm so excited! We can now start to ask some questions around popular wine years, which wine groups have had successful years, and so forth. In this session we looked at the following:
+
+* Which `Year` had the most `Wine`?
+* Which `WineGroup` has the most `Year` nodes?
+* Which `Winery` produces the most `Wine` for a given `Year`?
+
+Let's have a look at the first query:
+
+----
+MATCH (w:Wine)-[:FROM_YEAR]->(y:Year)
+WITH y, collect(w) AS wines
+RETURN y.value, size(wines) AS s ORDER BY s DESC
+----
+
+image::img/img7.jpg[width="600"]
+
+I've taken the liberty of turning the results into a chart (you can export CSV straight from Neo4j Browser, I've circled the button on the above image):
+
+image::img/img8.jpg[width="600"]
+
+Neck and neck between 2012 and 2013! Very interesting, given our wine range goes up to 2017. I was not expecting that at all, more like 2014-15.
+
+Onto the next query, let's look at the `WineGroup` with the most `Year` nodes:
+
+----
+MATCH (wg:WineGroup)<-[:IN_WINE_GROUP]-(w:Wine)-[:FROM_YEAR]->(y:Year)
+WITH wg, collect(y.value) AS years
+RETURN wg.title, years, SIZE(years) AS cy ORDER BY cy DESC
+----
+
+image::img/img9.jpg[width="600"]
+
+Double years? Hmm, let's go investigate:
+
+----
+MATCH (wg:WineGroup)<-[:IN_WINE_GROUP]-(w:Wine)-[:FROM_YEAR]->(y:Year)
+WHERE id(wg)=576395
+RETURN *
+----
+
+image::img/img10.jpg[width="600"]
+
+Ah - our assumption that each `Wine` we imported was unique was a false assumption! How big is the problem?
+
+----
+MATCH (wg:WineGroup)<-[:IN_WINE_GROUP]-(w:Wine)-[:FROM_YEAR]->(y:Year)
+WITH wg, y, collect(w) AS wines WHERE size(wines)>1
+RETURN count(wg)
+----
+
+Returns 471 - ok, not so bad. I'm feeling dangerous, let's try and fix it in a (questionable) query... I'm going to take the first wine in the collect, and remove the others remaining.
+
+----
+MATCH (wg:WineGroup)<-[:IN_WINE_GROUP]-(w:Wine)-[:FROM_YEAR]->(y:Year)
+WITH wg, y, collect(w) AS wines WHERE size(wines)>1
+WITH wines[1] AS w
+DETACH DELETE w
+----
+
+Let's go into a little what the above query does. You'll probably remember doing something like `MATCH (n:MyNode) DETACH DELETE n` will match all nodes with label `MyNode`, detach any relationships and then delete all the nodes that have that label. What the above query does with the `WITH` statement is pull out the 2nd node from our collection (which we know is a duplicate), and then apply the same method. Hopefully that makes sense!
+
+_(I cheated slightly, 2 of the 471 were in fact triplicates, so I ran the above query twice to remove those too)_
+
+So now, if we run our query again for the `WineGroup` with the most `Year` nodes, we now get:
+
+image::img/img11.jpg[width="600"]
+
+Success! On to the next query... Finding out the `Winery` with the most most `Wine` for a given `Year`. 
+
+As before, we're using `Wine` and also `Year` as the method to connect things together. 
+
+----
+MATCH (wy:Winery)<-[:FROM_WINERY]-(w:Wine)-[:FROM_YEAR]->(y:Year)
+WITH wy, y, COLLECT(w) AS wines
+RETURN wy.name AS Winery, y.value AS Year, size(wines) AS `No of Wines` 
+ORDER BY `No of Wines` DESC
+----
+
+image::img/img12.jpg[width="600"]
+
+Very popular, that Wines & Winemakers. Perhaps we'll investigate a bit more at some point in the future.
 
 [#week6]
-=== Week 6 (3 July - 8am PDT, 11pm EDT, 4pm BST, 5pm CEST): Based on the outcome of week 5
+=== Week 6 (3 July - 8am PDT, 11pm EDT, 4pm BST, 5pm CEST): So what exactly is designation?!
+
+.by Scott Warman
+[caption="Napa in a Bottle  ",link=https://unsplash.com/photos/h4AGlo55tTA] 
+image::https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1650&q=80[width=640, align="center"] 
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Weeks 1,2 and 5 to load the data_
+
+So we finally sorted the wine groups and years (hurray!), and we managed to find out a bit more around popular wines, years and so forth. I was having a look at what we've imported so far, and I was still none the wiser about what is `Designation`. I guess it's time to find out!
+
+
+[#week7]
+=== Week 7 (10 July - 8am PDT, 11pm EDT, 4pm BST, 5pm CEST): Time for some description fun!
+
+I'm really keen to extract some of the interesting features in the descriptions, such as notes and tastes. Let's have a go at this!
