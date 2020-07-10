@@ -811,7 +811,7 @@ Very popular, that Wines & Winemakers. Perhaps we'll investigate a bit more at s
 === Week 6 (3 July - 8am PDT, 11pm EDT, 4pm BST, 5pm CEST): So what exactly is designation?!
 
 .by Scott Warman
-[caption="Napa in a Bottle  ",link=https://unsplash.com/photos/h4AGlo55tTA] 
+[caption="Napa in a Bottle ",link=https://unsplash.com/photos/h4AGlo55tTA] 
 image::https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1650&q=80[width=640, align="center"] 
 
 https://twitch.tv/neo4j_[Neo4j on Twitch!^]
@@ -822,10 +822,150 @@ _Want to participate?_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Weeks 1,2 and 5 to load the data_
 
-So we finally sorted the wine groups and years (hurray!), and we managed to find out a bit more around popular wines, years and so forth. I was having a look at what we've imported so far, and I was still none the wiser about what is `Designation`. I guess it's time to find out!
+Welcome back, everybody! Well, I have to say, lots of fun was had this week. 
 
+So we set out to understand what exactly was `Designation`. We had a quick look, and it very much appeared like it was a generated data field, most likely from the wine title, and didn't seem particularly useful. So it was quickly discounted for now - and an thorough investigation into the original data set may be useful to do in the future.
+
+So.. with all this time left for the session, it was time to decide what to do next! I was quite keen to have a play with `Variety`. When we looked at it last time (at the point of data import), we noticed there were wine grape varieties in the data, and there are lots of interesting queries we could do off the back of that, i.e. recommending different blends of wine, and so forth.
+
+First of all, we had a look at the different varieties we had:
+
+----
+MATCH (v:Variety)
+RETURN v.name ORDER BY v.name
+----
+
+Which lets us know we have 708 records for variety.
+
+There are some interesting things going on, when we explore the list of varieties returned. For example: 
+
+* different spellings for the same grape, e.g. Aragonez and Aragonês
+* different names for the same grape, e.g. Syrah and Shiraz
+* different ordering of wine blends, e.g. Cabernet-Shiraz and Shiraz-Cabernet
+
+Ideally, we want to be able to clean these up, as well as being able to link up all wines that have a grape variety in common together, e.g.
+
+----
+MATCH (v:Variety)
+WHERE tolower(v.name) CONTAINS 'shiraz'
+RETURN v.name ORDER BY v.name
+----
+
+.We want all of these to link to Shiraz `Variety`!
+image::img/img13.jpg[width="600"]
+
+This problem that we tackled this week pretty much follows the same approach I used when working on food ingredients data. This problem comes up a lot, and you will see it in many places. If this is something of interest, I suggest you read my https://medium.com/neo4j/whats-cooking-part-5-dealing-with-duplicates-a6cdf525842a[BBC GoodFood blog post^] on it!
+
+First of all, let's have a look at the similar names. Once again, we are going to use APOC for helping us do the text manipulation. Before we do major surgery on our data, let's do a bit of comparison work.
+
+I've previously used both Levenstein similarity and Sorensen dice similarity for comparting text, each have their pros and cons. Where strings vary in size compared to each other, I am not a big fan of Levenstein distance - I find the value a bit meaningless as returning 3 might mean very little similarity between two words, but would suggest two paragraphs are nearly the same!
+
+When picking your approach for comparing strings, do your homework, and be well aware of what the chosen algorithm is doing, so that you are not caught by surprise. You can look at the documentation for the various fuzzy text matching options in the https://neo4j.com/docs/labs/apoc/current/misc/text-functions/#text-functions-text-similarity[APOC documentation^].
+
+Using Levenstein similarity (it returns us a value between 0-1) means we at least have two fixed points that we can apply a threshold to. Again, another warning, dear reader. When deciding what threshold value you decide to chose, beware the https://en.wikipedia.org/wiki/Overfitting[underfitting and overfitting^] problem! Even with something as simple as this, you can be caught unaware.
+
+So, back to our comparitor query:
+
+----
+MATCH (v1:Variety), (v2:Variety)
+WHERE ID(v1)<ID(v2)
+WITH v1, v2, apoc.text.levenshteinSimilarity(v1.name, v2.name) as d 
+RETURN v1.name, v2.name, d ORDER BY d DESC
+----
+
+image::img/img14.jpg[width="600"]
+
+Nice! This is picking up the varieties with similar names. However, if we scroll down a bit... 
+
+image::img/img15.jpg[width="600"] 
+
+Ah, we spot a couple of problems:
+
+* What do we do about those barrel names? This doesn't help the ordering problem!
+* The challenge with Levenstein similarity the longer the word gets, as long as lots of letters match, it's going to get a good similarity score. Blanco and Blend are going to be matched if they are part of a longer word.
+
+Before we continue on how we're going to fix that, perhaps another thing to mention. It is highly unlikely we're going to be able to apply 'automated' means to process the data, and get a 100% result. Underfitting and overfitting aside, we're going to have to accept that what we do won't be completely right, but as long as it's 'good enough' (depending on what we define 'good enough'), then we are winning. For me, given this data set and what we're trying, getting a few wrong varieties joined together is completely fine, as long as the vast majority are correct.
+
+Ok, enough of that, let's talk about how we're going to resolve the problems above in one, fell swoop. We are going to tokenise! Time to revamp that data model (again)...
+
+We are going to create a new node label, `VarietyName`, and this will have the tokenised name(s) from `Variety`. For example, for 'Grenanche Blanc', there are going to be two new nodes created with the values 'Grenance' and 'Blanc', connecting back to 'Grenanche Blanc'. Like this, we do away with the ordering problem, and our words are now nice and short, so that similarity score is going to be more meainingful. Then we can do all the comparitor work on top. 
+
+.Our latest update!
+image::img/img16.jpg[width="600"] 
+
+We are going to add our new node following these steps:
+
+* Create an index for `VarietyName`
+* Get all the variety names, split the strings by spaces and hyphens, apply a text cleaning function (to remove accents, etc.), and then `MERGE` them. Attach back to originating `Variety` node
+* Go across and compare all the `VarietyName` nodes against each other, using Levenstein Similarity. Any names that match, reconnect the originating `Variety` node to one of the `VarietyName`, and delete the other one
+
+Let's get that index sorted:
+
+----
+CREATE INDEX ON :VarietyName(name)
+----
+
+First pass - I'm using APOC again to do a multiple split:
+
+----
+MATCH (v:Variety)
+WITH v, apoc.text.split(v.name, "[ ]|[-]") AS names
+FOREACH (n IN names|
+ MERGE (vn:VarietyName {name:apoc.text.clean(n)})
+ MERGE (vn)-[:IS_COMPONENT_OF]->(v)
+    )
+----
+
+And the second pass:
+
+----
+MATCH (v1:VarietyName), (v2:VarietyName)-[:IS_COMPONENT_OF]->(var:Variety)
+WHERE ID(v1)<ID(v2)
+WITH v1, v2, apoc.text.levenshteinSimilarity(v1.name, v2.name) as d WHERE d >= 0.8
+MERGE (v1)-[:IS_COMPONENT_OF]->(var)
+WITH v2
+DETACH DELETE v2
+----
+
+We decided to live dangerously and a threshold of 0.8 seemed to do a good job. Remember, folks, if we were doing this for a more serious project, we'd be a bit more careful with how we chose the threshold.
+
+How many `VarietyName` do we have?
+
+image::img/img17.jpg[width="600"] 
+
+Wow, that's a fair fewer than the original `Variety` node. 
+
+There's probably a bunch of other things we can do to clean it up further, and we'll revisit that later. But for now, let's ask some new questions!
+
+*Show `Variety` linked to `VarietyName`*
+
+----
+MATCH (vn:VarietyName)-[:IS_COMPONENT_OF]->(v:Variety)
+WITH vn, COLLECT(v) AS var
+RETURN vn.name, var, size(var) AS s 
+ORDER BY s DESC LIMIT 5
+----
+
+image::img/img18.jpg[width="600"] 
+
+*Which `VarietyName` have the most `Wine`?*
+
+----
+MATCH (vn:VarietyName)-[:IS_COMPONENT_OF]->(v:Variety)<-[:HAS_VARIETY]-(w:Wine)
+WITH vn, COLLECT(w) AS wines
+RETURN vn.name, size(wines) AS s 
+ORDER BY s DESC LIMIT 5
+----
+
+image::img/img19.jpg[width="600"] 
+
+Sooo, we'll probably need to use some knowledge to deal with those, but don't worry too much that things like 'blend' are popping up. What we will do very soon is use the `VarietyName` nodes to help use 'dedulicate' our `Variety` nodes, and the 'blend' problem will go away. More on that to come soon!
 
 [#week7]
 === Week 7 (10 July - 8am PDT, 11pm EDT, 4pm BST, 5pm CEST): Time for some description fun!
+
+.by Raissa Lara Lütolf
+[caption="Selling rose wine ",link=https://unsplash.com/photos/lCIPZxZqXKY] 
+image::https://images.unsplash.com/photo-1586864985444-ddd0ba84c323?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2106&q=80[width=640, align="center"] 
 
 I'm really keen to extract some of the interesting features in the descriptions, such as notes and tastes. Let's have a go at this!
