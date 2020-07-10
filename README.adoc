@@ -854,6 +854,7 @@ RETURN v.name ORDER BY v.name
 .We want all of these to link to Shiraz `Variety`!
 image::img/img13.jpg[width="600"]
 
+
 This problem that we tackled this week pretty much follows the same approach I used when working on food ingredients data. This problem comes up a lot, and you will see it in many places. If this is something of interest, I suggest you read my https://medium.com/neo4j/whats-cooking-part-5-dealing-with-duplicates-a6cdf525842a[BBC GoodFood blog post^] on it!
 
 First of all, let's have a look at the similar names. Once again, we are going to use APOC for helping us do the text manipulation. Before we do major surgery on our data, let's do a bit of comparison work.
@@ -892,6 +893,7 @@ We are going to create a new node label, `VarietyName`, and this will have the t
 
 .Our latest update!
 image::img/img16.jpg[width="600"] 
+
 
 We are going to add our new node following these steps:
 
