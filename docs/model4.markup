@@ -1,0 +1,40 @@
+<ul class="graph-diagram-markup" data-internal-scale="1" data-external-scale="1">
+  <li class="node" data-node-id="0" data-x="-416.72272872924805" data-y="6.976345062255859">
+    <span class="caption">Wine</span><dl class="properties"><dt>row</dt><dd>1</dd><dt>title</dt><dd>titleOfWine</dd><dt>description</dt><dd>something about the wine</dd><dt>price</dt><dd>13</dd></dl></li>
+  <li class="node" data-node-id="1" data-x="1366.8844604492188" data-y="6.976345062255859">
+    <span class="caption">Province</span><dl class="properties"><dt>name</dt><dd>provinceName</dd></dl></li>
+  <li class="node" data-node-id="2" data-x="-2047.118179321289" data-y="-815.7948257923126"></li>
+  <li class="node" data-node-id="3" data-x="3381.050708770752" data-y="1245.9876623153687"></li>
+  <li class="node" data-node-id="4" data-x="-416.72272872924805" data-y="-729.7683410644531">
+    <span class="caption">Designation</span><dl class="properties"><dt>name</dt><dd>designation name</dd></dl></li>
+  <li class="node" data-node-id="5" data-x="685.0319519042969" data-y="-842.0008239746094">
+    <span class="caption">VarietyName</span><dl class="properties"><dt>name</dt><dd>componentName</dd></dl></li>
+  <li class="node" data-node-id="6" data-x="2263.6493530273438" data-y="6.976345062255859">
+    <span class="caption">Country</span><dl class="properties"><dt>name</dt><dd>countryName</dd></dl></li>
+  <li class="node" data-node-id="7" data-x="-1298.93017578125" data-y="-14.21727180480957">
+    <span class="caption">Taster</span><dl class="properties"><dt>name</dt><dd>tasterName</dd></dl></li>
+  <li class="node" data-node-id="8" data-x="141.3651123046875" data-y="-423.9837107658386">
+    <span class="caption">Variety</span><dl class="properties"><dt>name</dt><dd>varietyName</dd></dl></li>
+  <li class="node" data-node-id="9" data-x="630.7077331542969" data-y="6.976345062255859">
+    <span class="caption">Winery</span><dl class="properties"><dt>name</dt><dd>wineryName</dd></dl></li>
+  <li class="relationship" data-from="1" data-to="6">
+    <span class="type">PROVINCE_COUNTRY</span>
+  </li>
+  <li class="relationship" data-from="7" data-to="0">
+    <span class="type">RATES_WINE</span><dl class="properties"><dt>points</dt><dd>pointsFromTaster</dd></dl></li>
+  <li class="relationship" data-from="0" data-to="8">
+    <span class="type">HAS_VARIETY</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="9">
+    <span class="type">FROM_WINERY</span>
+  </li>
+  <li class="relationship" data-from="9" data-to="1">
+    <span class="type">FROM_PROVENCE</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="4">
+    <span class="type">HAS_DESIGNATION</span>
+  </li>
+  <li class="relationship" data-from="5" data-to="8">
+    <span class="type">IS_COMPONENT_OF</span>
+  </li>
+</ul>
