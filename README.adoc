@@ -1124,7 +1124,8 @@ We can see we have some very interesting things to deal with. Along with plurals
 
 .by Nick Karvounis
 [caption="Nimb Brasserie, København, Denmark  ",link=https://unsplash.com/photos/SWIoVDRZWUY] 
-image::https://images.unsplash.com/photo-1521153144914-aae4bcd3d201?ixlib=rb-1.2.1[width=640, align="center"] 
+image::https://images.unsplash.com/photo-1521153144914-aae4bcd3d201?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2106&q=80[width=640, align="center"] 
+
 
 https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
