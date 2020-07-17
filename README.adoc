@@ -1119,14 +1119,8 @@ image::img/img24.jpg[width="600"]
 
 We can see we have some very interesting things to deal with. Along with plurals, we also have spelling mistakes. Again, another one we'll take a closer look at next week. Should be fun!
 
-
-week 8 ideas
-- get rid of some stop words
-- compare tasting nodes to same wine group, any new stuff appear?
-- how often does the grape variety appear in the description?
-
 [#week8]
-=== Week 5 (17 July - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST): Let's do more with descriptions!
+=== Week 8 (17 July - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST): Let's do more with descriptions!
 
 .by Nick Karvounis
 [caption="Nimb Brasserie, København, Denmark  ",link=https://unsplash.com/photos/SWIoVDRZWUY] 
