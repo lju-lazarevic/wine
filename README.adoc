@@ -970,4 +970,180 @@ Sooo, we'll probably need to use some knowledge to deal with those, but don't wo
 [caption="Selling rose wine ",link=https://unsplash.com/photos/lCIPZxZqXKY] 
 image::https://images.unsplash.com/photo-1586864985444-ddd0ba84c323?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2106&q=80[width=640, align="center"] 
 
-I'm really keen to extract some of the interesting features in the descriptions, such as notes and tastes. Let's have a go at this!
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2,5-6 to load the data_
+
+*All about the descriptions!*
+
+So this week we had a look at the descriptions for the data. These are those notes you get about the wine, such as what does it taste of, smell of, etc. We hadn't previously imported those before, so this is the week to do it!
+
+I am really excited about the descriptions, they give us yet another layer of data to explore that allow us to see how different wines are connected together. Perhaps we can use them to discover new grape varieties we might like, based on the wine's tasting notes. Or perhaps there's some specific about the soil in a vineyard that we like - many interesting things to look into!
+
+We're going to use a similar process to what we did with the `Variety` nodes - tokenise the words. The difference here being that some of the descriptions are quite long - paragraphs long! There will be lots of words we'll want to get rid of, our, 'stop' words such as 'the, as, wine' and so forth. Our focus for now is to get that data in to begin with, and then we can start the clean up.
+
+*Updates to the model*
+
+As mentioned above, we haven't added `Description` to our data, and, as we'll be tokenising the description into words, we'll need to add a `DescriptionWord` as well. Let's take a look at the next model iteration:
+
+image::img/model8.jpg[width="800"] 
+
+Undoubtedly, we'll be doing a few more revisions in the future, so don't get too attached to that model!
+
+*Let's load up the data*
+
+As always, the first order of the day is set up an index. We don't need to do one for `Description`. It is highly unlikely we'll ever do a search directly on the description - we won't be `MERGE`-ing on it (we assume each description is unique, like the wine). However, we do need one for `DescriptionWord`. We'll be doing loads of querying on that, so let's get one set up:
+
+----
+CREATE INDEX ON :DescriptionWord(value)
+----
+
+Next, let's load up the data. I'm going to start with `Description`. This is slightly different to the Twitch stream, as I've altered the query so that we connect `Description` to `Wine` at the time of load:
+
+----
+:auto //add this line if you're using Neo4j Browser
+USING PERIODIC COMMIT 1000
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/lju-lazarevic/wine/master/data/winemag-data-130k-v3.csv' AS row
+CREATE (d:Description {value:coalesce(row.description, "No Description")})
+WITH d, row
+MATCH (w:Wine {id:row.id})
+CREATE (w)-[:HAS_DESCRIPTION]->(d)
+----
+
+For those of you who were watching the stream, you will have spotted my error - I had put an index on `id`, and not `name`. That's why it was taking so long! I must remind myself to check the `:Schema` each time I think about adding data 😀. This took less than 12s, again that's what I'd expect. If it takes a long time, check those indexes/queries where you assume an index is being used.
+
+Ok, let's tokenise those description words! We're going to use `apoc.periodic.iterate()` to help us
+
+----
+//Create the Description Word nodes
+CALL apoc.periodic.iterate(
+  "MATCH (d:Description) RETURN d",
+  "WITH d, split(d.value, ' ') AS words
+FOREACH (n IN words|
+ MERGE (dw:DescriptionWord {value: lower(n)})
+ MERGE (dw)-[:IS_DESCRIPTION_WORD]->(d)
+    )",
+  {batchSize:100, parallel:false})
+----
+
+We did an initial creation of the words splitting with space, but we quickly discovered that there are other things, such as slashes, hyphens, etc, we need to include as well as spaces for splitting. We also have other characters such as commas causing mischief. So, let's have another go at loading the words to account for this. The quickest way will be to delete all the `DescriptionWord` nodes, and start again... Note that we have 71135 `DescriptionWord` nodes...
+
+image::img/img20.jpg[width="600"] 
+
+----
+//Delete the DescriptionWord nodes
+call apoc.periodic.commit(
+"match (dw:DescriptionWord)
+WITH dw LIMIT {limit}
+DETACH DELETE dw
+RETURN count(*)", {limit:100})
+----
+
+You may be wondering why is `limit` set so low? Don't forget that we've got some very densely connected `DescriptionWord` nodes, so we'll want to keep the limit low as they might be connected to 80k+ wines!
+
+Ok, let's load those nodes back in. We'll also use 'apoc.text.clean()' to strip out commas, accents, and the like:
+
+----
+CALL apoc.periodic.iterate(
+  "MATCH (d:Description) RETURN d",
+  "WITH d, apoc.text.split(d.value, '[ ]|[-]|[/]') AS words
+FOREACH (n IN words|
+ MERGE (dw:DescriptionWord {value: apoc.text.clean(n)})
+ MERGE (dw)-[:IS_DESCRIPTION_WORD]->(d)
+    )",
+  {batchSize:100, parallel:false})
+----
+
+image::img/img21.jpg[width="600"] 
+
+Much better! Down to 36344 nodes... but we have lots of numbers... How many do we have?
+
+----
+MATCH (d:DescriptionWord)
+WHERE size(apoc.text.replace(d.value,"[0-9]", ""))=0
+RETURN count(d)
+----
+
+956... Ok - that's for `DescriptionWord` nodes with just numbers, do we have any that have letters and numbers?
+
+----
+MATCH (d:DescriptionWord)
+WITH size(apoc.text.replace(d.value,"[0-9]", "")) as hasNum, d 
+WHERE hasNum < size(d.value) AND hasNum >0
+RETURN d.value
+----
+
+image::img/img22.jpg[width="600"]
+
+I think it's safe to say we can get rid of all of those, so let's do that now:
+
+----
+MATCH (d:DescriptionWord)
+WHERE size(apoc.text.replace(d.value,"[0-9]", ""))<size(d.value)
+DETACH DELETE d
+----
+
+And we're down to 35086 `DescriptionWord` nodes, far less than originally! We'll still have to deal with plurals and the sort - but let's leave that for next week.
+
+So, what are the most commonly used `DescriptionWord` values? I'm going to guess there are a lot of stop words taking pole position...
+
+----
+MATCH (dw:DescriptionWord)-[:IS_DESCRIPTION_WORD]->(d:Description)
+WITH dw, COLLECT(d) AS descriptions
+RETURN dw.value, size(descriptions) as size ORDER BY size DESC
+----
+
+image::img/img23.jpg[width="600"]
+
+We'll have a look at those next week!
+
+We then finished off the week looking at the similarity of the words. We quickly discovered we needed to do a fair bit of throttling on the words so that relevant words were compared together, e.g.
+
+----
+MATCH (d1:DescriptionWord), (d2:DescriptionWord)
+WHERE id(d1)<id(d2) AND size(d1.value) > 7 AND size(d1.value) <10 AND size(d2.value) > 7 AND size(d2.value) <10 AND left(d1.value,1)=left(d2.value,1)
+WITH d1, d2, apoc.text.levenshteinSimilarity(d1.value, d2.value) as res
+RETURN d1.value, d2.value, res ORDER BY res DESC
+----
+
+To try and make sure we are comparing similar words to begin with, we are:
+
+* Making sure that the words are within 2-3 characters in length of each other
+* Making sure they start with the same letter
+
+image::img/img24.jpg[width="600"]
+
+We can see we have some very interesting things to deal with. Along with plurals, we also have spelling mistakes. Again, another one we'll take a closer look at next week. Should be fun!
+
+
+week 8 ideas
+- get rid of some stop words
+- compare tasting nodes to same wine group, any new stuff appear?
+- how often does the grape variety appear in the description?
+
+[#week8]
+=== Week 5 (17 July - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST): Let's do more with descriptions!
+
+.by Nick Karvounis
+[caption="Nimb Brasserie, København, Denmark  ",link=https://unsplash.com/photos/SWIoVDRZWUY] 
+image::https://images.unsplash.com/photo-1521153144914-aae4bcd3d201?ixlib=rb-1.2.1[width=640, align="center"] 
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2, 5-7 to load the data_
+
+*The plan*
+
+So I'm thinking:
+
+* Get rid of the stop words
+* Deal with plurals and and spelling mistakes
+* Let's do some exploration of wines and descriptions!
