@@ -1,7 +1,7 @@
 = Graph adventures with wine
 :toc:
 :toc-title: Weeks so far
-:toclevels: 1
+:toclevels: 2
 
 .by Maja Petric
 [caption="Grapes  ",link=https://unsplash.com/photos/vGQ49l9I4EE] 
@@ -1133,12 +1133,129 @@ _Want to participate?_
 
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2, 5-8 to load the data_
+
+Welcome back, dear oenophiles! We're picking up where we left off last week, dealing with the various irregularities around plurals, stop words and so forth.
+
+We had a look at a rough distribution of how many of each word length we had in `DescriptionWord`:
+
+----
+MATCH (dw:DescriptionWord)
+RETURN size(dw.value) as size, count(dw) as c ORDER by c DESC
+----
+
+image::img/img25.jpg[width="600"]
+
+Interestingly we have a few very long words. We had a look at those and discovered that we missed some things to split by (commas, long hyphens). We'll need to redo that soon!
+
+We also took the 'live by the seat of our pants' philosophy to assume that all words 3 characters or less are stop words, so we removed all of those:
+
+----
+MATCH (dw:DescriptionWord)
+WHERE size(dw.value) < 4
+DETACH DELETE dw
+----
+
+We also used Levenshtien Similarity to remove similar words, which helpfully deals with plurals for us:
+
+----
+//Remove duplicate description words by similarity
+CALL apoc.periodic.iterate(
+  "MATCH (d1:DescriptionWord), (d2:DescriptionWord)-[:IS_DESCRIPTION_WORD]->(d:Description)
+  WHERE id(d1)<id(d2) AND left(d1.value,1)=left(d2.value,1) AND size(d1.value) > 7 AND size(d1.value) <11 AND 	size(d2.value) > 7 AND size(d2.value) <11 
+	WITH d1, d2, apoc.text.levenshteinSimilarity(d1.value, d2.value) as res WHERE res >0.88
+  RETURN d1, d2, d",
+  "MERGE (d1)-[:IS_DESCRIPTION_WORD]->(d)
+	WITH d2
+	DETACH DELETE d2)",
+  {batchSize:10, parallel:false})
+----
+
+We used `apoc.periodic.iterate()` because there are some very densely connect nodes in there, so we want to do them in small batches.
+
+There's more stuff we can do to clean up, and we'll tackle that later/I'll do it on the sly and let you know what to do. 
+
+*Let's do some fun stuff!*
+
+So one of the things I was really keen to try out was how did `Description` compare with grape `Variety`. Going straight into the deep end, let's try this...
+
+----
+MATCH (v:VarietyName)
+WITH v 
+MATCH (dw:DescriptionWord {value:v.name})
+WITH dw
+MATCH (dw)-[:IS_DESCRIPTION_WORD]->(d:Description)<-[:HAS_DESCRIPTION]-(wine:Wine)-[:HAS_VARIETY]->(v:Variety)
+WHERE dw.value <> vn.name
+RETURN DISTINCT v.name, d.value, wine.title limit 50
+----
+
+What we're doing here:
+
+* Get all the `VarietyName` nodes (tokenised grape varieties)
+* Filter all of the `DescriptionWords` against the `VarietyName` nodes to keep the ones that match
+* Using the matching `DescriptionWords`, pull back all of the `Wine` and `Variety` nodes that match. Note that the `Variety` nodes don't necessarily have to link back to the original `VarietyName` nodes!
+
+For those of you who saw my stream for this week, some of the results that came back made me very excited indeed!
+
+image::img/img26.jpg[width="600"]
+
+Take a close look at result 3 - the variety name listed is 'Rhone-style Red Blend' - no mention of any specific grapes, just 'Red Blend'. That's not particularly useful if you wanted to recommend a wine based on specific grames! But... graphs to the rescue! What we've been able to do is use a combination of the description and the variety (over the whole data set) to figure out what are grape varieties within the description... and then use that to tell us what the grape varieties are for 'Red Blend' 🤯. We can use this to enrich our data! We can now say what are the grapes used in these mysterious blends.
+
+Let's go one further, and specifically look for those wines that are declared as 'Red Blends':
+
+----
+MATCH (v:VarietyName)
+WITH v 
+MATCH (dw:DescriptionWord {value:v.name})
+WITH dw
+MATCH (dw)-[:IS_DESCRIPTION_WORD]->(d:Description)<-[:HAS_DESCRIPTION]-(wine:Wine)-[:HAS_VARIETY]->(v:Variety)<-[:IS_COMPONENT_OF]-(vn:VarietyName)
+WHERE dw.value <> vn.name 
+    AND tolower(v.name) contains('red')
+RETURN DISTINCT v.name, d.value, wine.title limit 50
+----
+
+image::img/img27.jpg[width="600"]
+
+Amazing!
+
+So, whilst we're here, let's find out what are the popular grapes in this 'red blend' variety...
+
+----
+MATCH (v:VarietyName)
+WHERE NOT v.name in ['black', 'red', 'white', 'blend','style', 'other']
+WITH v //LIMIT 20
+MATCH (dw:DescriptionWord {value:v.name})
+WITH dw
+MATCH (dw)-[:IS_DESCRIPTION_WORD]->(d:Description)<-[:HAS_DESCRIPTION]-(wine:Wine)-[:HAS_VARIETY]->(v:Variety)
+WHERE tolower(v.name) contains("red blend")
+WITH wine, dw ORDER BY dw.value
+WITH wine, collect(dw.value) as grapes
+RETURN grapes, count(grapes) as popularity order by popularity desc
+----
+
+Allow me to briefly talk you through this query...
+
+* Firstly we want to avoid all the variety names that contain generic words. We did a quick query, and ascertained the above array was it
+* Then we match those description words to the variety names
+* After, we pull back all of the wines that match that have 'red blend' as a variety
+* Then we do a count against against the most popular grape varieties to wine!
+
+image::img/img28.jpg[width="600"]
+
+There's probably a bit more data cleaning to go, but the point still stands - this is a very powerful way we can use all of these connections and the data that we've been processing to enrich our understanding further. I think we're going to be having a lot of fun with this in future episodes!
+
+[#week9]
+=== Week 9 (17 July - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST): The presenter has an air of mystery around the next episode (or we may do some more stuff with the descriptions!)
+
+.by Tim Mossholder
+[caption="New  ",link=https://unsplash.com/photos/KX1BBNY69Ao] 
+image::https://images.unsplash.com/photo-1498811077893-814242077ef6?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1950&q=80[width=640, align="center"] 
+
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2, 5-7 to load the data_
-
-*The plan*
-
-So I'm thinking:
-
-* Get rid of the stop words
-* Deal with plurals and and spelling mistakes
-* Let's do some exploration of wines and descriptions!
