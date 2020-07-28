@@ -12,6 +12,7 @@ Based on the data from https://www.kaggle.com/zynicide/wine-reviews/data[Kaggle]
 
 Follow along on the https://twitch.tv/neo4j_[Neo4j Twitch channel]!
 
+Need to catch up? Here's the https://www.youtube.com/playlist?list=PL9Hl4pk2FsvU7skL6tC-ZoSALfDQ552bI[adventures with wine data playlist].
 
 [#week1]
 === Week 1 (18 May): Let's explore the data!
@@ -664,6 +665,7 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
+* _https://www.youtube.com/watch?v=l6X1EbrCswg[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2 to load the data_
@@ -818,6 +820,7 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
+* _https://www.youtube.com/watch?v=gvW_yvIkhh4[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Weeks 1,2 and 5 to load the data_
@@ -974,6 +977,7 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
+* _https://www.youtube.com/watch?v=JytJjIOlD2o[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2,5-6 to load the data_
@@ -1131,6 +1135,7 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
+* _https://www.youtube.com/watch?v=e_ccNhk6Is8[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2, 5-8 to load the data_
@@ -1256,6 +1261,7 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
+* _https://www.youtube.com/watch?v=bHN8enDcdfY[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2, 5-7 to load the data_
