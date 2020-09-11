@@ -1250,7 +1250,7 @@ image::img/img28.jpg[width="600"]
 There's probably a bit more data cleaning to go, but the point still stands - this is a very powerful way we can use all of these connections and the data that we've been processing to enrich our understanding further. I think we're going to be having a lot of fun with this in future episodes!
 
 [#week9]
-=== Week 9 (17 July - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST): The presenter has an air of mystery around the next episode (or we may do some more stuff with the descriptions!)
+=== Week 9 (17 July - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST): Cleaning up the description words
 
 .by Tim Mossholder
 [caption="New  ",link=https://unsplash.com/photos/KX1BBNY69Ao] 
@@ -1265,3 +1265,61 @@ _Want to participate?_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2, 5-7 to load the data_
+
+A brief update for this week! We spent a bit of time this week looking at how could we remove some of the common words away from the wine description, such as stop words, verbs, etc. that do not really describe the wine!
+
+The goal behind this is so that we can try and eventually be able to recommend wines based on certain description words, e.g. 'berries', or 'citrus'.
+
+We did bit of a hunt around the internet for potential lists of stop words, and found the following:
+
+* http://www.lextek.com/manuals/onix/stopwords1.html[List of potential stop words^]
+* https://www.wordexample.com/list/most-common-verbs-english[List of common verbs^]
+
+Having downloaded these lists and got them into a csv-friendly format, we then used them to search for matching description words, and then remove:
+
+----
+call apoc.periodic.commit(
+"LOAD CSV WITH HEADERS FROM 'file:///sw1.csv' as row
+MATCH (dw:DescriptionWord {value:apoc.text.clean(row.i)})
+WITH dw limit $limit
+detach delete dw
+RETURN count(*)", {limit:10})
+----
+
+The verbs were in table format, so with a bit of unwind magic, we can wrangle that too:
+----
+call apoc.periodic.commit("
+LOAD CSV WITH HEADERS FROM 'file:///sw2.csv' as row
+WITH [row.a,row.b,row.c,row.d,row.e] as words
+unwind words as word
+MATCH (dw:DescriptionWord {value:apoc.text.clean(word)})
+with dw limit $limit
+detach delete dw
+return count(*)",
+{limit:20})
+----
+
+[#week10]
+=== Week 10 (11 September - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST): More work on the description words
+
+.by Rebecca Matthews
+[caption="Collection of wine bottles  ",link=https://unsplash.com/photos/CaCqt7OL-3Q] 
+image::https://images.unsplash.com/photo-1500669950830-1a4f3a4b0879?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1650&q=80[width=640, align="center"] 
+
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _https://www.youtube.com/watch?v=bHN8enDcdfY[Watch the Twitch session^]_
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2, 5-7 to load the data_
+
+We've spoken about some of the challenges with have with the description words, including with all of the various splitters. I propose this week we:
+
+* Remove and redo the description words, taking into account all splitters
+* Use word similarity comparison to remove similar words
+* Use the stop word and verb lists to remove those common words
+* Examine what we've got left!
+
