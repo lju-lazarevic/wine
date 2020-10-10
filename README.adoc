@@ -1323,3 +1323,148 @@ We've spoken about some of the challenges with have with the description words, 
 * Use the stop word and verb lists to remove those common words
 * Examine what we've got left!
 
+I will update this accordingly, along with proposed clean up for the description words eventually :)
+
+=== Week 11 (5 October - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST) - Adding the rating
+
+.by Daniel Vogel
+[caption="A view to drink  ",link=https://unsplash.com/photos/sKgGpXZTkGM] 
+image::https://images.unsplash.com/photo-1545729317-a7beae3bf432?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1950&q=80[width=640, align="center"] 
+
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _https://www.youtube.com/watch?v=bHN8enDcdfY[Watch the Twitch session^]_
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2, 5-8 to load the data_
+
+This week we looked at adding in the ratings the reviewers gave for the wines. If you recall, we have the following set up with the data:
+
+* Only one review per wine
+* Reviews are tied to the reviewer
+* Points theoretically range between 0-100
+
+Originally, in our data model, we assigned for now that the review would be a relationship property between Wine and Reviewer:
+
+image::img/model8.jpg[width="800"] 
+
+Now - there's potentially a problem here. We have approx 120k wines, which means up to 120k points... which will mean up to 120k relationships between reviewer and wine. This may be an issue if we want to do things with those points, and if we do, we potentially have to scan every single relationship to look at it's score property. Not great...
+
+In this scenario it might be worth thinking out of the box (or bottle?!) and consider how many different points we may have for the reviews. 
+
+So, how many Tasters do we actually have? We'll also check out how many wine's they've reviewed too. Let's take a look:
+
+----
+MATCH (t:Taster)-[:RATES_WINE]->(w:Wine)
+WITH t, COLLECT(w) AS wines
+RETURN t.name AS Taster, SIZE(wines) AS s ORDER BY s DESC
+----
+
+image::img/img31.jpg[width="800"]
+
+Roger has tasted _how many wines_?!?!?!? 😱 Roger certainly shows dedication to the task at hand 😂
+
+We have a total of 19 named reviewers in our data, and a potential of 101 different points (0-100), so if we had the points as nodes, worst case scenario, we'd have to look up 19 * 101 = 1919 nodes for points. That's significantly better than looking up 120k properties!
+
+I've also got a hunch that we don't even have that many points available. So, first thing's first, let's have a look.
+
+----
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/lju-lazarevic/wine/master/data/winemag-data-130k-v3.csv' AS row
+WITH toInteger(row.points) AS point
+RETURN DISTINCT point ORDER BY point
+----
+
+Ah... in fact, the points only range between 80-100! Whilst this now has shattered my faith in all things related to points awarded to wines and how seriously I can take them, it does mean that worst case scenario, we're only looking at 19 * 21 nodes to look up (not all reviewers will award all those points). 
+
+You know what this means. Time to refactor that model, oh yes!
+
+image::img/model9.jpg[width="800"]
+
+And of course, it is also time to load in our Points data too. We are going to do this in two parts. The first part we're going to generate the range of possible points available, and assign them to the wine tasters. We'll also assign the Points nodes to 'No Taster'. Maybe that will come in useful at some point in the future. Then we'll map wines to reviewers point scores.
+
+First of all, we'll remove that existing relationship between Taster and Wine:
+
+----
+CALL apoc.periodic.commit("
+MATCH (t:Taster)-[r:RATES_WINE]->(w:Wine)
+WITH r LIMIT $limit
+DELETE r
+RETURN COUNT(*)",
+{limit:10})
+----
+
+Now let's add the Points nodes to Taster:
+
+----
+//Add the Points nodes to reviewers
+WITH range(80,100) AS points //generate an array with values from 80-100
+UNWIND points AS point //unwind the array
+MATCH (t:Taster) 
+CREATE (p:Points {value:point})<-[:GAVE_POINTS]-(t)
+----
+
+And finally the Points to Wine:
+
+----
+:auto //add this line if you're using Neo4j Browser
+//Add the reviewers to points nodes based on wines they tasted
+USING PERIODIC COMMIT 10000
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/lju-lazarevic/wine/master/data/winemag-data-130k-v3.csv' AS row
+WITH COALESCE(row.taster_name, 'No Taster') AS taster, row WHERE row.points <> ""
+MATCH (t:Taster {name:taster})-[:GAVE_POINTS]->(p:Points {value:toInteger(row.points)})
+MATCH (w:Wine {id:row.id})
+CREATE (p)<-[:HAS_POINTS]-(w)
+----
+
+Excellent! All done. Now, one thing that grabbed my attention was those 100-point wines! Let's find out what they were and who reviewed them:
+
+----
+MATCH (p:Points {value:100})<-[:HAS_POINTS]-(w:Wine)-[:HAS_VARIETY]-(v:Variety)
+MATCH (p)<-[:GAVE_POINTS]-(t:Taster)
+RETURN t.name AS `Reviewer`,  w.title AS `Wine title`, v.name AS `Grape variety` ORDER BY `Grape variety`
+----
+
+image::img/img29.jpg[width="800"]
+
+There's Roger again. Although, I guess that isn't much of a surprise, given what we learned earlier!
+
+Someone suggested we looked at the grape variety of wines wines rated 90 and above, so let's do that:
+
+----
+MATCH (p:Points)<-[:HAS_POINTS]-(w:Wine)-[:HAS_VARIETY]-(v:Variety)
+WHERE p.value>89
+WITH v.name AS grapes, collect(v) AS freq
+RETURN grapes, size(freq) AS `well rated` ORDER BY `well rated` DESC
+----
+
+image::img/img30.jpg[width="800"]
+
+Rather well-rated, that Pinot Noir!
+
+A viewer suggested we check out the following question. Let's have a look at that soon:
+
+* What´s the best value wine, according to the tasters?
+
+That's all for now. See you next week!
+
+
+=== Week 12 (12 October - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST) - Adding and exploring the price
+
+.by Alexander Gamanyuk
+[caption="Collection of wine bottles  ",link=https://unsplash.com/photos/Jq-szy786e0] 
+image::https://images.unsplash.com/photo-1581919769013-950a210fe5ea?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1950&q=80[width=640, align="center"] 
+
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _https://www.youtube.com/watch?v=bHN8enDcdfY[Watch the Twitch session^]_
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2, 5-8, 11 to load the data_
+
+This week let's add in what price data we have - do we find some interesting revelations between price and ratings? Let's find out!
