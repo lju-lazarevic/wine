@@ -1467,4 +1467,108 @@ _Want to participate?_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2, 5-8, 11 to load the data_
 
-This week let's add in what price data we have - do we find some interesting revelations between price and ratings? Let's find out!
+This week we decided to have a look at the wine price data. Given our 'discovery' from the previous week that we only had 21 different scores available for 120k wines (and therefore we went for 21 Point nodes, rather than 120k properties on relationships), we thought we'd check out what the situation was on prices:
+
+----
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/lju-lazarevic/wine/master/data/winemag-data-130k-v3.csv' AS row
+WITH toInteger(row.price) AS price WHERE price <>""
+RETURN DISTINCT price ORDER BY price
+----
+
+So we've only got 390 different wine prices. You know what this means... We're also going to have a Price node :). Time to refactor that data model once again:
+
+image::img/model10.jpg[width="800"]
+
+Also, let's get that price data in too:
+
+----
+:auto //add this line if you're using Neo4j Browser
+USING PERIODIC COMMIT 10000
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/lju-lazarevic/wine/master/data/winemag-data-130k-v3.csv' AS row
+WITH row.price AS price, row.id AS id WHERE price <>""
+MATCH (w:Wine {id:id})
+MERGE (p:Price {value:toInteger(price)})
+CREATE (p)<-[:HAS_PRICE]-(w)
+----
+
+When we were checking what wine prices we had, we did spot some expensive wines... Let's check those out again, along with what points they scored:
+
+----
+MATCH (point:Points)<-[:HAS_POINTS]-(w:Wine)-[:HAS_PRICE]->(p:Price)
+WHERE p.value >=1000
+RETURN w.title AS Title, p.value AS Price, point.value AS Points ORDER BY p.value
+----
+
+image::img/img32.jpg[width="800"]
+
+So, despite having a wine that cost $3300(!), it only scored 88 points, shocking! There were a couple of insanely priced wines that scored a perfect 100 though.
+
+For a bit of contect, let's have a look at the wines, in ascending order of wine, that scored 97 and above points, and their price and variety:
+
+----
+MATCH (p:Price)<-[:HAS_PRICE]-(w:Wine)-[:HAS_POINTS]->(point:Points)
+WHERE point.value >96
+WITH p, w, point
+MATCH (w)-[:HAS_VARIETY]->(v:Variety)
+RETURN w.title AS Title, v.name AS Variety, point.value AS POINTS, p.value AS Price ORDER BY Price
+----
+
+image::img/img33.jpg[width="800"]
+
+That's right, folks! You can get yourself some well-rated wine without having to dip your hand early into the pension fund. For a mere $35, you can pick up a fine bottle of Syrah. The lowest priced wine scoring 100 (also a Syrah, yum!) comes in at $80. Ok, bit on the pricy side, but you don't have to raid the kid's education fund to sample some of the good stuff.
+
+*Time for a bit of stats and back to those points*
+
+So, we decided to do a bit of exploring. Remember our 19 named tasters? Let's find out what is the cheapest and most expensive wine they've sampled, along with the average price:
+
+----
+MATCH (p:Price)<-[:HAS_PRICE]-(w:Wine)-[:HAS_POINTS]->(point:Points)<-[:GAVE_POINTS]-(t:Taster)
+WHERE t.name <> 'No Taster'
+WITH t, p.value AS prices
+RETURN t.name AS Taster, min(prices) AS Cheapest, max(prices) AS MostExpensive, avg(prices) AS Average ORDER BY MostExpensive
+----
+
+image::img/img34.jpg[width="800"]
+
+Ok, so we have some interesting ranges, but the averages pretty much sit around $20-40. But how big the range? If we've got a big variance around the price, then that's not a meaningful view for the 'average' price of the wines being reviewed. Let's add the standard deviation value to that picture:
+
+----
+MATCH (p:Price)<-[:HAS_PRICE]-(w:Wine)-[:HAS_POINTS]->(point:Points)<-[:GAVE_POINTS]-(t:Taster)
+WHERE t.name <> 'No Taster'
+WITH t, p.value AS prices
+RETURN t.name AS Taster, min(prices) AS Cheapest, max(prices) AS MostExpensive, avg(prices) AS Average, stdev(prices) ORDER BY MostExpensive
+----
+
+Wow, there can be a fair bit of variance there! What does this mean? The larger the standard deviation, the more the prices for the taster vary wildly away from the average (mean) price.
+
+Let's leave that there for now. A viewer was quite keen to see which Countries had the best scoring wines. Let's check that out now
+
+----
+MATCH (p:Points)<-[:HAS_POINTS]-(w:Wine)-[:FROM_WINERY]->(:Winery)-[:FROM_PROVENCE]->(:Province)-[:PROVINCE_COUNTRY]->(c:Country)
+WHERE c.name <> 'No Country'
+RETURN c.name, min(p.value) AS min, max(p.value) AS max, avg(p.value) AS avg ORDER BY avg DESC
+----
+
+image::img/img35.jpg[width="800"]
+
+Oh yeah! Get in, check out our fine selection of English wines - admittedly, we do some very good sparking wines. I'm a big fan of the Ridgeview stuff myself.
+
+That's all for this week. If there's something you'd like me to look into the next episode, let me know via the usual channels.
+
+=== Week 13 (26 October - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST) - So what are we going to do this week?!
+
+.by Francesco Ungaro
+[caption="Wine bottles  ",link=https://unsplash.com/photos/3txm5eINd0U] 
+image::https://images.unsplash.com/photo-1543060534-2c124acc29ba?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80[width=640, align="center"] 
+
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _https://www.youtube.com/watch?v=bHN8enDcdfY[Watch the Twitch session^]_
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2, 5-8, 11-12 to load the data_
+
+Got some thoughts what we should have a look at this week? Let me know!

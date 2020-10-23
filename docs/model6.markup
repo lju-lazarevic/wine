@@ -1,0 +1,61 @@
+<ul class="graph-diagram-markup" data-internal-scale="1" data-external-scale="1">
+  <li class="node" data-node-id="0" data-x="-416.72272872924805" data-y="6.976345062255859">
+    <span class="caption">Wine</span><dl class="properties"><dt>row</dt><dd>1</dd><dt>title</dt><dd>titleOfWine</dd></dl></li>
+  <li class="node" data-node-id="1" data-x="1366.8844604492188" data-y="6.976345062255859">
+    <span class="caption">Province</span><dl class="properties"><dt>name</dt><dd>provinceName</dd></dl></li>
+  <li class="node" data-node-id="2" data-x="-2047.118179321289" data-y="-815.7948257923126"></li>
+  <li class="node" data-node-id="3" data-x="3381.050708770752" data-y="1245.9876623153687"></li>
+  <li class="node" data-node-id="4" data-x="-416.72272872924805" data-y="-729.7683410644531">
+    <span class="caption">Designation</span><dl class="properties"><dt>name</dt><dd>designation name</dd></dl></li>
+  <li class="node" data-node-id="5" data-x="685.0319519042969" data-y="-842.0008239746094">
+    <span class="caption">VarietyName</span><dl class="properties"><dt>name</dt><dd>componentName</dd></dl></li>
+  <li class="node" data-node-id="6" data-x="2263.6493530273438" data-y="6.976345062255859">
+    <span class="caption">Country</span><dl class="properties"><dt>name</dt><dd>countryName</dd></dl></li>
+  <li class="node" data-node-id="7" data-x="-1420.0338134765625" data-y="-468.3561420440674">
+    <span class="caption">Taster</span><dl class="properties"><dt>name</dt><dd>tasterName</dd></dl></li>
+  <li class="node" data-node-id="8" data-x="141.3651123046875" data-y="-423.9837107658386">
+    <span class="caption">Variety</span><dl class="properties"><dt>name</dt><dd>varietyName</dd></dl></li>
+  <li class="node" data-node-id="9" data-x="630.7077331542969" data-y="6.976345062255859">
+    <span class="caption">Winery</span><dl class="properties"><dt>name</dt><dd>wineryName</dd></dl></li>
+  <li class="node" data-node-id="10" data-x="-903.9526252746582" data-y="-216.25659734010696">
+    <span class="caption">Points</span><dl class="properties"><dt>value</dt><dd>pointsValue</dd></dl></li>
+  <li class="node" data-node-id="11" data-x="-993.8843994140625" data-y="203.97698974609375">
+    <span class="caption">Price</span><dl class="properties"><dt>value</dt><dd>price</dd></dl></li>
+  <li class="node" data-node-id="12" data-x="390.1578826904297" data-y="358.8020324707031">
+    <span class="caption">Description</span><dl class="properties"><dt>value</dt><dd>someDescription</dd></dl></li>
+  <li class="node" data-node-id="13" data-x="1562.3255834579468" data-y="358.8020324707031">
+    <span class="caption">DescriptionWord</span><dl class="properties"><dt>value</dt><dd>descriptionWord</dd></dl></li>
+  <li class="relationship" data-from="1" data-to="6">
+    <span class="type">PROVINCE_COUNTRY</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="8">
+    <span class="type">HAS_VARIETY</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="9">
+    <span class="type">FROM_WINERY</span>
+  </li>
+  <li class="relationship" data-from="9" data-to="1">
+    <span class="type">FROM_PROVENCE</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="4">
+    <span class="type">HAS_DESIGNATION</span>
+  </li>
+  <li class="relationship" data-from="5" data-to="8">
+    <span class="type">IS_COMPONENT_OF</span>
+  </li>
+  <li class="relationship" data-from="7" data-to="10">
+    <span class="type">GAVE_POINTS</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="10">
+    <span class="type">HAS_POINTS</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="11">
+    <span class="type">HAS_PRICE</span>
+  </li>
+  <li class="relationship" data-from="0" data-to="12">
+    <span class="type">HAS_DESCRIPTION</span>
+  </li>
+  <li class="relationship" data-from="13" data-to="12">
+    <span class="type">IS_DESCRIPTION_WORD</span>
+  </li>
+</ul>
