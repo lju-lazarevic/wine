@@ -1311,7 +1311,7 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
-* _https://www.youtube.com/watch?v=bHN8enDcdfY[Watch the Twitch session^]_
+* _https://www.youtube.com/watch?v=oCV4teLlJeQ&list=PL9Hl4pk2FsvU7skL6tC-ZoSALfDQ552bI&index=11[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2, 5-7 to load the data_
@@ -1336,7 +1336,7 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
-* _https://www.youtube.com/watch?v=bHN8enDcdfY[Watch the Twitch session^]_
+* _https://www.youtube.com/watch?v=7sZaEVph_K4&list=PL9Hl4pk2FsvU7skL6tC-ZoSALfDQ552bI&index=12[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2, 5-8 to load the data_
@@ -1462,7 +1462,7 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
-* _https://www.youtube.com/watch?v=bHN8enDcdfY[Watch the Twitch session^]_
+* _https://www.youtube.com/watch?v=31lBDzP8MtA&list=PL9Hl4pk2FsvU7skL6tC-ZoSALfDQ552bI&index=13[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2, 5-8, 11 to load the data_
@@ -1555,7 +1555,7 @@ Oh yeah! Get in, check out our fine selection of English wines - admittedly, we 
 
 That's all for this week. If there's something you'd like me to look into the next episode, let me know via the usual channels.
 
-=== Week 13 (26 October - 8am PDT, 11am EDT, 4pm BST, 5pm CEST, 8:30pm IST) - So what are we going to do this week?!
+=== Week 13 (26 October - 8am PDT, 11am EDT, 4pm UTC, 5pm CET, 9:30pm IST) - A week of reflection
 
 .by Francesco Ungaro
 [caption="Wine bottles  ",link=https://unsplash.com/photos/3txm5eINd0U] 
@@ -1566,9 +1566,68 @@ https://twitch.tv/neo4j_[Neo4j on Twitch!^]
 
 _Want to participate?_
 
-* _https://www.youtube.com/watch?v=bHN8enDcdfY[Watch the Twitch session^]_
+* _https://www.youtube.com/watch?v=KPQMRqiUp1Y&list=PL9Hl4pk2FsvU7skL6tC-ZoSALfDQ552bI&index=14[Watch the Twitch session^]_
 * _Download and install http://neo4j.com/download[Neo4j Desktop^]_
 * _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
 * _Complete the steps for Week 1 - 2, 5-8, 11-12 to load the data_
 
-Got some thoughts what we should have a look at this week? Let me know!
+Not much of a write-up for this week :)
+
+We took the opportunity this session to reflect on what we've done on this wine journey, the decisions made along the way, and where we're up to now.
+
+=== Week 14 (9 November - 8am PST, 11am EST, 4pm UTC, 5pm CET, 9:30pm IST) - Location, Location, Location!
+
+.by Elle Hughes
+[caption="Holidaying with my friend  ",link=https://unsplash.com/photos/rYEUdOG2ves] 
+image::https://images.unsplash.com/photo-1508471608746-b7f6b8a5b0b0?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1950&q=80[width=640, align="center"] 
+
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _https://www.youtube.com/watch?v=rg8hleSlqZI&list=PL9Hl4pk2FsvU7skL6tC-ZoSALfDQ552bI&index=15[Watch the Twitch session^]_
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2, 5-8, 11-12 to load the data_
+
+=== Week 15 (23 November - 8am PST, 11am EST, 4pm UTC, 5pm CET, 9:30pm IST)  - Blooming Marvelous
+
+.by Matthieu Joannon
+[caption="Stellenbosch, South Africa  ",link=https://unsplash.com/photos/25EEyoY58zI] 
+image::https://images.unsplash.com/photo-1503427128716-12b0ed4822bb?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1789&q=80[width=640, align="center"] 
+
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _https://www.youtube.com/watch?v=1P8QMV5XPYc&list=PL9Hl4pk2FsvU7skL6tC-ZoSALfDQ552bI&index=16[Watch the Twitch session^]_
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2, 5-8, 11-12 to load the data_
+
+Hello everybody! This week was Neo4j Bloom week, by popular request the previous week. And didn't we have fun?
+
+We did a mix of show and tell where we jumped between different parts of the Bloom app, and implementing actual functionality. I'd heartily suggest you watch the https://www.youtube.com/watch?v=1P8QMV5XPYc&list=PL9Hl4pk2FsvU7skL6tC-ZoSALfDQ552bI&index=16[catch-up session^] to see what exactly we covered. 
+
+We looked at:
+
+* 
+
+=== Week 16 (30 November - 8am PST, 11am EST, 4pm UTC, 5pm CET, 9:30pm IST) - Let's sort that location
+
+.by Brandy Turner
+[caption="Catania, Italy  ",link=https://unsplash.com/photos/nZ37ifip5VM] 
+image::https://images.unsplash.com/photo-1516154767575-2146adebdf32?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1867&q=80[width=640, align="center"] 
+
+
+https://twitch.tv/neo4j_[Neo4j on Twitch!^]
+
+_Want to participate?_
+
+* _Download and install http://neo4j.com/download[Neo4j Desktop^]_
+* _Create a new project in Neo4j Desktop called wine, and add a database. You may find https://neo4j.com/developer/neo4j-desktop/[this developer guide^] helpful_
+* _Complete the steps for Week 1 - 2, 5-8, 11-12 to load the data_
+
+So this week we're going to pick up where we left off in week 14, and make those location changes!
